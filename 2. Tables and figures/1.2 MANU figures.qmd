@@ -1,0 +1,1973 @@
+---
+title: "MANU: figures"
+author: "Juan Li"
+date: 2025-06-03
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+library(dplyr)      # Data manipulation
+library(tidyr)      # Data manipulation
+library(ggplot2)    # Data visualization
+library(dabestr)    # Estimation plots (version 0.3.0) devtools::install_version("dabestr", version='0.3.0')
+library(pROC)       # ROC, AUC
+library(gtsummary)  # Summary table
+library(ggpubr)
+library(stringr)
+```
+
+## Read data
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+variables <- read.csv("Worksheets/curated_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+variable_details <- read.csv("Worksheets/curated_variable_details.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+
+data <- read.csv(paste0(dirname(getwd()), "/1. Curate the data/Curated data/Ottawa_trial_combine_curated_scores.csv"), 
+                 header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+data <- data[,variables$Short.name]
+```
+
+# neurodegenerative disease (ND)
+
+PP216 Group C; Recruited as "MCI/vascular cognition loss"; reviewed as MCI, MoCA 20/30; labelled as Dementia in my final list. OHRI patients, I can send you the MRN if needed. PP262 Group A; primary neurodegenerative dementia syndrome, most likely AD; Recruited as AD, reviewed as Dementia, with note "Specific etiology unclear." OHRI patient, can be further reviewed. PP274 Group C; EBH patient, recruited as "Advanced MCI". No review note in the master sheet, labelled as Dementia in my final list. Now deceased. PP367 Group B; EBH patient, reviewed as Vascular dementia, with MoCA 26/30
+
+```{r}
+group_ND <- read.csv("Worksheets/diagnosis group_ND.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+
+data$group_ND <- rep("",nrow(data))
+for (diagnosis in group_ND$Diagnosis){
+  data$group_ND[which(data$diagnosis == diagnosis)] <- group_ND$Group_ND[which(group_ND$Diagnosis == diagnosis)]
+}
+
+data$group_ND[which(data$ID == "PP216")] <- "Group C"
+data$group_ND[which(data$ID == "PP262")] <- "Group A"
+data$group_ND[which(data$ID == "PP274")] <- "Group C"
+data$group_ND[which(data$ID == "PP367")] <- "Group B"
+
+table(data %>% select(diagnosis, group_ND))
+```
+
+## make the categorical variables as factor and update the labels if applicable
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+flag_print <- F
+for (var in unique(variable_details$Short.name)) {
+  if (flag_print) {
+    print("-------------")
+    print(table(data[var], useNA = "ifany"))
+  }
+  label_vec <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(OptionLabel)))
+  label_vec <- label_vec[!is.na(label_vec)]
+  
+  label_vec_2 <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(ShortLabel)))
+  label_vec_2 <- label_vec_2[!is.na(label_vec_2)]
+  
+  if (!all(label_vec==label_vec_2)) # need to update labels
+  {
+    vec <- unlist(data[var])
+    for (i in seq_len(length(label_vec))){
+      vec[which(vec == label_vec[i])] <- label_vec_2[i]
+    }
+    data[var] <- vec
+  }
+  
+  # make it factor with proper levels
+  data[names(data)[which(names(data) == var)]] <- 
+    lapply(data[names(data)[which(names(data) == var)]], factor, levels = label_vec_2)
+  if (flag_print) {
+    print(table(data[var], useNA = "ifany"))
+    print(lapply(data[names(data)[which(names(data) == var)]], levels))
+  }
+}
+
+# drop levels since some options in the variable detail sheet were never chosen
+data <- data %>% droplevels()
+
+levels(data$group) <- c("HC", "PD", "OND")
+levels(data$group2) <- c("HC", "PD", "MSA/PSP", "MCI/DEM", "AON")
+```
+
+```{r}
+# For the cohort who have complete PREDIGT 1.0 Questionnaire - Original Questionnaire Score
+length(unique(data$ID))
+table(data$sex)
+round(prop.table(table(data$sex))*100, 2)
+min(data$age)
+max(data$age)
+table(data$group2)
+
+# For the cohort who have complete PREDIGT 1.0 Questionnaire + UPSIT
+df_UPSIT <- data %>% filter(!is.na(UPSIT_scr)) %>% droplevels()
+length(unique(df_UPSIT$ID))
+
+print("-----------------")
+# For the cohort who have complete PREDIGT 2.0 Questionnaire
+nrow(data %>% filter(!is.na(PREDIGT_S_B_motor)))
+
+# For the cohort who have complete NeuroScent
+nrow(data %>% filter(!is.na(neuroscent_scr)))
+
+# For the cohort who have complete PREDIGT 2.0 Questionnaire & NeuroScent
+nrow(data %>% filter(!is.na(PREDIGT_S_B_motor),!is.na(neuroscent_scr)))
+
+# For the cohort who have complete ALL components
+df_PREDIGT2 <- data %>% filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels()
+length(unique(df_PREDIGT2$ID))
+
+# Score range
+paste0("Score range of Original Questionnaire: ", min(data$PREDIGT_O, na.rm = T), " - ", max(data$PREDIGT_O, na.rm = T))
+paste0("Score range of Simplified Questionnaire: ", min(data$PREDIGT_S_B_motor, na.rm = T), " - ", max(data$PREDIGT_S_B_motor, na.rm = T))
+paste0("Score range of UPSIT: ", min(data$UPSIT_scr, na.rm = T), " - ", max(data$UPSIT_scr, na.rm = T))
+paste0("Score range of NeuroScent: ", min(data$neuroscent_scr, na.rm = T), " - ", max(data$neuroscent_scr, na.rm = T))
+paste0("Score range of Original Questionnaire + UPSIT: ", round(min(data$PREDIGT_O_UPSIT, na.rm = T),2), " - ", round(max(data$PREDIGT_O_UPSIT, na.rm = T),2))
+paste0("Score range of Simplified Questionnaire + NeuroScent: ", round(min(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2), " - ", round(max(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2))
+```
+
+```{r}
+table(data %>% filter(group == "HC") %>% select(depression1, depression2))
+table(data %>% filter(group == "HC") %>% select(depression1_b, depression2_b))
+table(data %>% filter(group == "HC") %>% select(depression_dir))
+
+table(data %>% filter(group == "PD") %>% select(depression1, depression2))
+table(data %>% filter(group == "PD") %>% select(depression1_b, depression2_b))
+table(data %>% filter(group == "PD") %>% select(depression_dir))
+```
+
+## ROC, AUC
+
+### Table 3: all components
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+source("util.R", echo = TRUE)
+
+# --------- median (IQR) ---------
+var_vec <- variables$Short.name[which(variables$ROC == 1)]
+name_vec <- variables$Long.name[which(variables$ROC == 1)]
+
+for (i_cohort in 1:3) {
+  if (i_cohort == 1)
+    # PREDIGT1 cohort
+  {
+    df_roc_temp <- data
+  } else if (i_cohort == 2)
+    # UPSIT cohort
+  {
+    df_roc_temp <- data %>% filter(!is.na(PREDIGT_O_UPSIT)) %>% droplevels()
+  } else
+    # all_component
+  {
+    df_roc_temp <- df_PREDIGT2
+  }
+  
+  df_O_tbl1 <- df_roc_temp %>%
+    select(group, group2, sex, all_of(var_vec))
+  names(df_O_tbl1)[c(4:ncol(df_O_tbl1))] <- name_vec
+  
+  # all
+  print(df_O_tbl1 %>% select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("All") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+  
+  # Female
+  print(df_O_tbl1 %>% filter(sex == "Female") %>% droplevels() %>%
+    select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("Female") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+  
+  # Male
+  print(df_O_tbl1 %>% filter(sex == "Male") %>% droplevels() %>%
+    select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("Male") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# --------- ROC/AUC ---------
+
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+test_vec2 <- variables$Long.name[which(variables$ROC == 1)]
+type1_vec <- variables$Type1[which(variables$ROC == 1)]
+type2_vec <- variables$Type2[which(variables$ROC == 1)]
+group_name <- levels(data$group)
+directions <- c("<", "<", ">", ">", "<", "<")
+
+resList <- list()
+for (i_cohort in 1:3) {
+  if (i_cohort == 1)
+    # PREDIGT1 cohort
+  {
+    df_roc_temp <- data
+  } else if (i_cohort == 2)
+    # UPSIT cohort
+  {
+    df_roc_temp <- data %>% filter(!is.na(PREDIGT_O_UPSIT)) %>% droplevels()
+  } else
+    # all_component
+  {
+    df_roc_temp <- df_PREDIGT2
+  }
+  
+  df <- df_roc_temp %>%
+    mutate(group3 = ifelse(group == "PD", "PD", "HC+OND"))
+  levels(df$group3) <- c("HC+OND", "PD")
+  table(df %>% select(group, group3))
+  compareList <- list(c("HC", "PD"), c("OND", "PD"), c("HC+OND", "PD"))
+  
+  dfPlt <- data.frame()
+  res <- data.frame()
+  for (i in seq_len(length(test_vec))) {
+    df_i <- df %>% select(group, group3, sex, all_of(test_vec[i]))
+    names(df_i)[ncol(df_i)] <- "value"
+    
+    for (i_group in 1:3) {
+      # ------- All -------
+      if (i_group < 3) {
+        df_temp <- df_i %>% select(group, value, sex)
+      } else {
+        df_temp <- df_i %>% select(group3, value, sex)
+        names(df_temp)[names(df_temp) == "group3"] <- "group"
+      }
+      
+      result_A <- ROC_summary(df_temp,
+                              compareList[[i_group]],
+                              test_vec2[i],
+                              type1_vec[i],
+                              type2_vec[i],
+                              direction = directions[i])
+      dfPlt <- bind_rows(dfPlt, result_A$dfPlt)
+      res <- bind_rows(res, result_A$res)
+      
+      #  ------- Female -------
+      df_temp_F <- df_temp %>% filter(sex == "Female") %>% droplevels()
+      
+      result_F <- ROC_summary(
+        df_temp_F,
+        compareList[[i_group]],
+        test_vec2[i],
+        type1_vec[i],
+        type2_vec[i],
+        sex = "Female",
+        cut_all = result_A$cut_all,
+        direction = directions[i]
+      )
+      dfPlt <- bind_rows(dfPlt, result_F$dfPlt)
+      res <- bind_rows(res, result_F$res)
+      
+      #  ------- Male -------
+      df_temp_M <- df_temp %>% filter(sex == "Male") %>% droplevels()
+      
+      result_M <- ROC_summary(
+        df_temp_M,
+        compareList[[i_group]],
+        test_vec2[i],
+        type1_vec[i],
+        type2_vec[i],
+        sex = "Male",
+        cut_all = result_A$cut_all,
+        direction = directions[i]
+      )
+      dfPlt <- bind_rows(dfPlt, result_M$dfPlt)
+      res <- bind_rows(res, result_M$res)
+    }
+  }
+  # save result
+  resList[[i_cohort]] <- res
+}
+
+res_PREDIGT1 <- resList[[1]]
+res_UPSIT <- resList[[2]]
+res_all_component <- resList[[3]]
+
+res_all_component %>% filter(sex == "All")
+res_all_component %>% filter(sex == "Female")
+res_all_component %>% filter(sex == "Male")
+```
+
+### Supplementary Table 3: whole cohort
+
+```{r}
+res_PREDIGT1 %>% filter(sex == "All")
+```
+
+## Sensitivity, specificity, PPV, NPV
+
+### Figure 4, Supplementary Figure 3
+
+```{r}
+# Thresholds based on LR+, LR-
+df <- dfPlt %>% filter(sex == "All") %>% droplevels()
+
+gr <- expand_grid(unique(df$tests), unique(df$group))
+names(gr) <- c("tests", "group")
+
+cut_1 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  ind <- which(df$tests == as.character(cut_1[i, "tests"]) &
+                                   df$group == as.character(cut_1[i, "group"]) &
+                                   df$LR_p >= 10 & df$LR_n <= 0.1)
+  temp <- df$thresholds[ind]
+  if (length(temp) > 0) {
+    cut_1$cut_min[i] <- min(temp)
+    cut_1$cut_max[i] <- max(temp)
+  }
+}
+cut_1$tests <- factor(cut_1$tests, levels = unique(df$tests))
+cut_1$group <- factor(cut_1$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_1$cut_max == cut_1$cut_min)
+cut_1[inds,]$cut_max <- cut_1[inds,]$cut_max + 0.2
+cut_1
+
+cut_2 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  temp <- df$thresholds[which(df$tests == as.character(cut_2[i, "tests"]) &
+                                   df$group == as.character(cut_2[i, "group"]) &
+                                   df$LR_p >= 5 & df$LR_n <= 0.2)]
+  if (length(temp) > 0) {
+    cut_2$cut_min[i] <- min(temp)
+    cut_2$cut_max[i] <- max(temp)
+  }
+}
+cut_2$tests <- factor(cut_2$tests, levels = unique(df$tests))
+cut_2$group <- factor(cut_2$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_2$cut_max == cut_2$cut_min)
+cut_2[inds,]$cut_max <- cut_2[inds,]$cut_max + 0.2
+cut_2
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.3
+
+# Figure 4: PD vs HC+OND
+
+ttlvec <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+ttlvec2 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+for (i in seq_len(length(unique(dfPlt$tests)))) {
+  test_i <- unique(dfPlt$tests)[i]
+  df <- dfPlt %>% filter(tests == test_i, sex =="All", group == "PD vs HC+OND") %>% droplevels()
+  df_long <- df %>% 
+    pivot_longer(-c(thresholds, tests, group, sex, type1, type2), names_to = "metric", values_to = "value") 
+  df_long$metric <- factor(df_long$metric, levels = c("sensitivity", "specificity", "ppv", "npv", "LR_p", "LR_n"))
+  levels(df_long$metric) <- c("sensitivity", "specificity", "ppv", "npv", "LR+", "LR-")
+  df_long <- df_long %>% mutate(metric2 = factor(ifelse(metric %in% c("sensitivity", "specificity"), 2, 1)))
+  
+  res_i <- res %>% filter(tests == test_i, sex =="All", group == "PD vs HC+OND") %>% droplevels()
+  res_i$cut_all <- as.numeric(str_extract(res_i$cut_all, "-?\\d+\\.?\\d*"))
+  
+  # sensitivity, specificity, ppv, npv
+  p1 <- ggplot(df_long %>% filter(!(metric %in% c("LR+", "LR-"))) %>% droplevels(),
+              aes(thresholds, value, color = metric, linewidth = metric2)) +
+    geom_path(size = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.8,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none") +
+    scale_color_manual(values = c("orange", "orangered", "blue", "green3")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(breaks = seq(0,1, by = 0.2)) +
+    guides(linewidth = "none")+
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR+ and "ruling in"
+  dfLR_p <- df_long %>% filter(metric == "LR+") %>% droplevels()
+  max_v <- max(ceiling(max(dfLR_p$value[is.finite(dfLR_p$value)])),10)
+  p2 <- ggplot(dfLR_p,
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 10,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 5,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("purple")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,max_v), breaks=seq(0,max_v, by = 5))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR- and "ruling out"
+  p3 <- ggplot(df_long %>% filter(metric == "LR-") %>% droplevels(),
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.1,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.2,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("violet")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1, by = 0.1))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  print(ggarrange(p1, p2, p3, ncol = 3, widths = c(1,0.7,0.7)))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.3
+
+# Figure 4: PD vs HC
+
+ttlvec <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+ttlvec2 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+for (i in seq_len(length(unique(dfPlt$tests)))) {
+  test_i <- unique(dfPlt$tests)[i]
+  df <- dfPlt %>% filter(tests == test_i, sex =="All", group == "PD vs HC") %>% droplevels()
+  df_long <- df %>% 
+    pivot_longer(-c(thresholds, tests, group, sex, type1, type2), names_to = "metric", values_to = "value") 
+  df_long$metric <- factor(df_long$metric, levels = c("sensitivity", "specificity", "ppv", "npv", "LR_p", "LR_n"))
+  levels(df_long$metric) <- c("sensitivity", "specificity", "ppv", "npv", "LR+", "LR-")
+  df_long <- df_long %>% mutate(metric2 = factor(ifelse(metric %in% c("sensitivity", "specificity"), 2, 1)))
+  
+  res_i <- res %>% filter(tests == test_i, sex =="All", group == "PD vs HC") %>% droplevels()
+  res_i$cut_all <- as.numeric(str_extract(res_i$cut_all, "-?\\d+\\.?\\d*"))
+  
+  # sensitivity, specificity, ppv, npv
+  p1 <- ggplot(df_long %>% filter(!(metric %in% c("LR+", "LR-"))) %>% droplevels(),
+              aes(thresholds, value, color = metric, linewidth = metric2)) +
+    geom_path(size = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.8,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none") +
+    scale_color_manual(values = c("orange", "orangered", "blue", "green3")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(breaks = seq(0,1, by = 0.2)) +
+    guides(linewidth = "none")+
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR+ and "ruling in"
+  dfLR_p <- df_long %>% filter(metric == "LR+") %>% droplevels()
+  max_v <- max(ceiling(max(dfLR_p$value[is.finite(dfLR_p$value)])),10)
+  p2 <- ggplot(dfLR_p,
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 10,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 5,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("purple")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,max_v), breaks=seq(0,max_v, by = 5))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR- and "ruling out"
+  p3 <- ggplot(df_long %>% filter(metric == "LR-") %>% droplevels(),
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.1,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.2,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("violet")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1, by = 0.1))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  print(ggarrange(p1, p2, p3, ncol = 3, widths = c(1,0.7,0.7)))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.3
+
+# Figure 4: PD vs OND
+
+ttlvec <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+ttlvec2 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+for (i in seq_len(length(unique(dfPlt$tests)))) {
+  test_i <- unique(dfPlt$tests)[i]
+  df <- dfPlt %>% filter(tests == test_i, sex =="All", group == "PD vs OND") %>% droplevels()
+  df_long <- df %>% 
+    pivot_longer(-c(thresholds, tests, group, sex, type1, type2), names_to = "metric", values_to = "value") 
+  df_long$metric <- factor(df_long$metric, levels = c("sensitivity", "specificity", "ppv", "npv", "LR_p", "LR_n"))
+  levels(df_long$metric) <- c("sensitivity", "specificity", "ppv", "npv", "LR+", "LR-")
+  df_long <- df_long %>% mutate(metric2 = factor(ifelse(metric %in% c("sensitivity", "specificity"), 2, 1)))
+  
+  res_i <- res %>% filter(tests == test_i, sex =="All", group == "PD vs OND") %>% droplevels()
+  res_i$cut_all <- as.numeric(str_extract(res_i$cut_all, "-?\\d+\\.?\\d*"))
+  
+  # sensitivity, specificity, ppv, npv
+  p1 <- ggplot(df_long %>% filter(!(metric %in% c("LR+", "LR-"))) %>% droplevels(),
+              aes(thresholds, value, color = metric, linewidth = metric2)) +
+    geom_path(size = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.8,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none") +
+    scale_color_manual(values = c("orange", "orangered", "blue", "green3")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(breaks = seq(0,1, by = 0.2)) +
+    guides(linewidth = "none")+
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR+ and "ruling in"
+  dfLR_p <- df_long %>% filter(metric == "LR+") %>% droplevels()
+  max_v <- max(ceiling(max(dfLR_p$value[is.finite(dfLR_p$value)])),10)
+  p2 <- ggplot(dfLR_p,
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 10,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 5,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("purple")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,max_v), breaks=seq(0,max_v, by = 5))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  # LR- and "ruling out"
+  p3 <- ggplot(df_long %>% filter(metric == "LR-") %>% droplevels(),
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.1,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.2,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("violet")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1, by = 0.1))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)
+  
+  print(ggarrange(p1, p2, p3, ncol = 3, widths = c(1,0.7,0.7)))
+}
+```
+
+### Supplementary Figure 5: metrics for female
+
+```{r}
+# Thresholds based on LR+, LR-
+df <- dfPlt %>% filter(sex == "Female") %>% droplevels()
+
+gr <- expand_grid(unique(df$tests), unique(df$group))
+names(gr) <- c("tests", "group")
+
+cut_1 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  ind <- which(df$tests == as.character(cut_1[i, "tests"]) &
+                                   df$group == as.character(cut_1[i, "group"]) &
+                                   df$LR_p >= 10 & df$LR_n <= 0.1)
+  temp <- df$thresholds[ind]
+  if (length(temp) > 0) {
+    cut_1$cut_min[i] <- min(temp)
+    cut_1$cut_max[i] <- max(temp)
+  }
+}
+cut_1$tests <- factor(cut_1$tests, levels = unique(df$tests))
+cut_1$group <- factor(cut_1$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_1$cut_max == cut_1$cut_min)
+cut_1[inds,]$cut_max <- cut_1[inds,]$cut_max + 0.2
+cut_1
+
+cut_2 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  temp <- df$thresholds[which(df$tests == as.character(cut_2[i, "tests"]) &
+                                   df$group == as.character(cut_2[i, "group"]) &
+                                   df$LR_p >= 5 & df$LR_n <= 0.2)]
+  if (length(temp) > 0) {
+    cut_2$cut_min[i] <- min(temp)
+    cut_2$cut_max[i] <- max(temp)
+  }
+}
+cut_2$tests <- factor(cut_2$tests, levels = unique(df$tests))
+cut_2$group <- factor(cut_2$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_2$cut_max == cut_2$cut_min)
+cut_2[inds,]$cut_max <- cut_2[inds,]$cut_max + 0.2
+cut_2
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.3
+
+# PD vs HC+OND
+
+ttlvec <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+ttlvec2 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+for (i in seq_len(length(unique(dfPlt$tests)))) {
+  test_i <- unique(dfPlt$tests)[i]
+  df <- dfPlt %>% filter(tests == test_i, sex =="Female", group == "PD vs HC+OND") %>% droplevels()
+  df_long <- df %>% 
+    pivot_longer(-c(thresholds, tests, group, sex, type1, type2), names_to = "metric", values_to = "value") 
+  df_long$metric <- factor(df_long$metric, levels = c("sensitivity", "specificity", "ppv", "npv", "LR_p", "LR_n"))
+  levels(df_long$metric) <- c("sensitivity", "specificity", "ppv", "npv", "LR+", "LR-")
+  df_long <- df_long %>% mutate(metric2 = factor(ifelse(metric %in% c("sensitivity", "specificity"), 2, 1)))
+  
+  res_i <- res %>% filter(tests == test_i, sex =="Female", group == "PD vs HC+OND") %>% droplevels()
+  res_i$cut_all <- as.numeric(str_extract(res_i$cut_all, "-?\\d+\\.?\\d*"))
+  res_i$cut <- as.numeric(str_extract(res_i$cut, "-?\\d+\\.?\\d*"))
+  
+  # sensitivity, specificity, ppv, npv
+  p1 <- ggplot(df_long %>% filter(!(metric %in% c("LR+", "LR-"))) %>% droplevels(),
+              aes(thresholds, value, color = metric, linewidth = metric2)) +
+    geom_path(size = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.8,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none") +
+    scale_color_manual(values = c("orange", "orangered", "blue", "green3")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(breaks = seq(0,1, by = 0.2)) +
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)+
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  # LR+ and "ruling in"
+  dfLR_p <- df_long %>% filter(metric == "LR+") %>% droplevels()
+  max_v <- max(ceiling(max(dfLR_p$value[is.finite(dfLR_p$value)])),10)
+  p2 <- ggplot(dfLR_p,
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 10,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 5,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("purple")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,max_v), breaks=seq(0,max_v, by = 5))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)+
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  # LR- and "ruling out"
+  p3 <- ggplot(df_long %>% filter(metric == "LR-") %>% droplevels(),
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.1,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.2,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("violet")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1, by = 0.1))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE)+
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  print(ggarrange(p1, p2, p3, ncol = 3, widths = c(1,0.7,0.7)))
+}
+```
+
+### Supplementary Figure 6: metrics for male
+
+```{r}
+# Thresholds based on LR+, LR-
+df <- dfPlt %>% filter(sex == "Male") %>% droplevels()
+
+gr <- expand_grid(unique(df$tests), unique(df$group))
+names(gr) <- c("tests", "group")
+
+cut_1 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  ind <- which(df$tests == as.character(cut_1[i, "tests"]) &
+                                   df$group == as.character(cut_1[i, "group"]) &
+                                   df$LR_p >= 10 & df$LR_n <= 0.1)
+  temp <- df$thresholds[ind]
+  if (length(temp) > 0) {
+    cut_1$cut_min[i] <- min(temp)
+    cut_1$cut_max[i] <- max(temp)
+  }
+}
+cut_1$tests <- factor(cut_1$tests, levels = unique(df$tests))
+cut_1$group <- factor(cut_1$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_1$cut_max == cut_1$cut_min)
+cut_1[inds,]$cut_max <- cut_1[inds,]$cut_max + 0.2
+cut_1
+
+cut_2 <- bind_cols(gr, data.frame(cut_min = rep(NA, nrow(gr)),cut_max = rep(NA, nrow(gr)))) 
+for (i in 1:nrow(gr)) {
+  temp <- df$thresholds[which(df$tests == as.character(cut_2[i, "tests"]) &
+                                   df$group == as.character(cut_2[i, "group"]) &
+                                   df$LR_p >= 5 & df$LR_n <= 0.2)]
+  if (length(temp) > 0) {
+    cut_2$cut_min[i] <- min(temp)
+    cut_2$cut_max[i] <- max(temp)
+  }
+}
+cut_2$tests <- factor(cut_2$tests, levels = unique(df$tests))
+cut_2$group <- factor(cut_2$group, levels = unique(df$group))
+# check for plotting
+inds <- which(cut_2$cut_max == cut_2$cut_min)
+cut_2[inds,]$cut_max <- cut_2[inds,]$cut_max + 0.2
+cut_2
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.3
+
+# PD vs HC+OND
+
+ttlvec <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+ttlvec2 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+for (i in seq_len(length(unique(dfPlt$tests)))) {
+  test_i <- unique(dfPlt$tests)[i]
+  df <- dfPlt %>% filter(tests == test_i, sex =="Male", group == "PD vs HC+OND") %>% droplevels()
+  df_long <- df %>% 
+    pivot_longer(-c(thresholds, tests, group, sex, type1, type2), names_to = "metric", values_to = "value") 
+  df_long$metric <- factor(df_long$metric, levels = c("sensitivity", "specificity", "ppv", "npv", "LR_p", "LR_n"))
+  levels(df_long$metric) <- c("sensitivity", "specificity", "ppv", "npv", "LR+", "LR-")
+  df_long <- df_long %>% mutate(metric2 = factor(ifelse(metric %in% c("sensitivity", "specificity"), 2, 1)))
+  
+  res_i <- res %>% filter(tests == test_i, sex =="Male", group == "PD vs HC+OND") %>% droplevels()
+  res_i$cut_all <- as.numeric(str_extract(res_i$cut_all, "-?\\d+\\.?\\d*"))
+  res_i$cut <- as.numeric(str_extract(res_i$cut, "-?\\d+\\.?\\d*"))
+  
+  # sensitivity, specificity, ppv, npv
+  p1 <- ggplot(df_long %>% filter(!(metric %in% c("LR+", "LR-"))) %>% droplevels(),
+              aes(thresholds, value, color = metric, linewidth = metric2)) +
+    geom_path(size = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.8,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none") +
+    scale_color_manual(values = c("orange", "orangered", "blue", "green3")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(breaks = seq(0,1, by = 0.2)) +
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE) +
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  # LR+ and "ruling in"
+  dfLR_p <- df_long %>% filter(metric == "LR+") %>% droplevels()
+  max_v <- max(ceiling(max(dfLR_p$value[is.finite(dfLR_p$value)])),10)
+  p2 <- ggplot(dfLR_p,
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 10,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 5,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("purple")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,max_v), breaks=seq(0,max_v, by = 5))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE) +
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  # LR- and "ruling out"
+  p3 <- ggplot(df_long %>% filter(metric == "LR-") %>% droplevels(),
+              aes(thresholds, value, color = metric)) +
+    geom_path(linewidth = 1) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut_all),
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_vline(data = res_i,
+               aes(xintercept = cut),
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.1,
+               #color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    geom_hline(yintercept = 0.2,
+               color = "red",
+               linetype = "dashed",
+               linewidth = 0.5) +
+    labs(
+      x = ttlvec2[i],
+      y = "Metric",
+      color = ""
+    ) +
+    theme_bw() +
+    theme(text = element_text(size = 12),
+          legend.position = "none",
+          axis.title.y = element_blank()) +
+    scale_color_manual(values = c("violet")) +
+    scale_linewidth_manual(values = c(0.3, 1)) +
+    scale_y_continuous(limits=c(0,1), breaks=seq(0,1, by = 0.1))+
+    guides(linewidth = "none") +
+    geom_rect(data = cut_2 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.2, fill = "blue", inherit.aes = FALSE) +
+    geom_rect(data = cut_1 %>% filter(tests == test_i, group == "PD vs HC+OND") %>% droplevels(), 
+              aes(xmin = cut_min, xmax = cut_max, ymin = -Inf, ymax = Inf), alpha = 0.5, fill = "red", inherit.aes = FALSE)
+  
+  print(ggarrange(p1, p2, p3, ncol = 3, widths = c(1,0.7,0.7)))
+}
+```
+
+### Figure 2, Supplementary Figure 2, Supplementary Figure 4 (by sex): Distribution plots
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+diagnosis_color <- read.csv("Worksheets/diagnosis colors.csv", header = TRUE)
+group.names <- levels(data$group2)
+my.colors <- diagnosis_color$color[which(diagnosis_color$diagnosis %in% group.names)]
+custom.pal <- setNames(my.colors, group.names)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5
+
+# Figure 2: show thresholds by point shape
+thresholds <- res_all_component %>% filter(sex == "All", group == "PD vs HC+OND") %>% droplevels() %>% select(tests, cut_all) 
+thresholds$direction <- rep("",nrow(thresholds))
+thresholds$cut <- rep(0,nrow(thresholds))
+for (i in 1:nrow(thresholds)) {
+  thresholds$direction[i] <- str_split(thresholds$cut_all[i], " ")[[1]][1]
+  thresholds$cut[i] <- as.numeric(str_split(thresholds$cut_all[i], " ")[[1]][2])
+}
+
+df <- data
+df$visit_alpha <- ifelse(!is.na(df$UPSIT_scr) & !is.na(df$PREDIGT_S_B_motor) & !is.na(df$neuroscent_scr), 1, 0.5)
+
+# by group
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+str_vec1 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            paste("Original Smell Test", "(UPSIT)", sep = "\n"), "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+group_name <- levels(df$group)
+
+# effect size ylim
+effsize.ymax <- c(90, 200, 5, 2, 70, 80)
+effsize.ymin <- c(-10, -10, -20, -6, -10, -10)
+  
+for (i in seq_len(length(test_vec))) {
+  if (i %in% c(2,4,6)) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group, group2, visit_alpha, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group, group2, visit_alpha, all_of(test_vec[i]))
+  }
+  names(df_i)[ncol(df_i)] <- "value"
+  
+  
+  # p-value
+  print(test_vec[i])
+  for(i_group in seq_len(length(group_name))) {
+    print(paste0("----- ", group_name[i_group], " -----"))
+    print(paste0(round(mean(df_i$value[df_i$group == group_name[i_group]], na.rm = T), 2), " (", round(sd(df_i$value[df_i$group == group_name[i_group]], na.rm = T), 2), ")"))
+  }
+  print("----- comparison -----")
+  print(DescTools::DunnettTest(x=df_i$value, g=df_i$group, control = group_name[1]))
+  
+  if (thresholds$direction[i] == ">=") {
+    df_i$shape <- ifelse(df_i$value >= thresholds$cut[i], 16, 17)
+  } else {
+    df_i$shape <- ifelse(df_i$value <= thresholds$cut[i], 16, 17)
+  }
+  
+  df_i <- df_i %>% filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(group2)
+  
+  # Plot
+  multi.group <- 
+    df_i %>%
+    dabest(group, value, 
+           idx = list(group_name),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i$group2))],
+             swarmplot.params=list(alpha=df_i$visit_alpha, shape=df_i$shape), tick.fontsize = 14,
+             rawplot.ylabel = str_vec1[i], effsize.ylim = c(effsize.ymin[i], effsize.ymax[i]),
+             show.legend = FALSE))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 5
+#| fig-height: 5
+
+# Supplementary Figure 1
+# by group, by sex
+rawplot.ymax <- c(325, 400, 40, 8, 100, 100)
+effsize.ymax <- c(100, 250, 1, 2, 80, 80)
+effsize.ymin <- c(-30, -10, -20, -6, -1, -10)
+
+for (i in seq_len(length(test_vec))) {
+  if (i %in% c(2,4)) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group, group2, visit_alpha, sex, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group, group2, visit_alpha, sex, all_of(test_vec[i]))
+  }
+  names(df_i)[ncol(df_i)] <- "value"
+
+  if (thresholds$direction[i] == ">=") {
+    df_i$shape <- ifelse(df_i$value >= thresholds$cut[i], 16, 17)
+  } else {
+    df_i$shape <- ifelse(df_i$value <= thresholds$cut[i], 16, 17)
+  }
+  
+  df_i <- df_i %>% 
+    filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(group2)
+    
+  # Female
+  df_i_F <- df_i %>% filter(sex == "Female") %>% droplevels() %>% 
+    mutate(sex_group = paste0("F: ", group))
+  multi.group <- 
+    df_i_F %>%
+    dabest(sex_group, value, 
+           idx = list(c("F: HC", "F: PD", "F: OND")),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i$group2))],
+             swarmplot.params=list(alpha=df_i_F$visit_alpha, shape=df_i_F$shape),tick.fontsize = 14,
+             rawplot.ylabel = str_vec1[i],
+             rawplot.ylim = c(0, rawplot.ymax[i]),
+             effsize.ylim = c(effsize.ymin[i], effsize.ymax[i]),
+             show.legend = FALSE))
+  
+  # Male
+  df_i_M <- df_i %>% filter(sex == "Male") %>% droplevels() %>% 
+    mutate(sex_group = paste0("M: ", group))
+  multi.group <- 
+    df_i_M %>%
+    dabest(sex_group, value, 
+           idx = list(c("M: HC", "M: PD", "M: OND")),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i$group2))],
+             swarmplot.params=list(alpha=df_i_M$visit_alpha, shape=df_i_M$shape),tick.fontsize = 14,
+             rawplot.ylabel = str_vec1[i],
+             rawplot.ylim = c(0, rawplot.ymax[i]),
+             effsize.ylim = c(effsize.ymin[i], effsize.ymax[i]),
+             show.legend = FALSE))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5
+
+# by group_ND
+data$group_ND <- factor(data$group_ND, levels = c("Group A", "Group B", "Group C", "HC"))
+levels(data$group_ND) <- c("ND",
+                           "Non-ND",
+                           "Mixed",
+                           "HC")
+
+df <- data
+df$visit_alpha <- ifelse(!is.na(df$UPSIT_scr) & !is.na(df$PREDIGT_S_B_motor) & !is.na(df$neuroscent_scr), 1, 0.3)
+
+# by group
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+str_vec1 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            paste("Original Smell Test", "(UPSIT)", sep = "\n"), "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+group_name <- levels(df$group_ND)
+
+my.colors2 <- diagnosis_color$color[which(diagnosis_color$diagnosis %in% group_name)]
+custom.pal2 <- setNames(my.colors2, group_name)
+
+for (i in seq_len(length(test_vec))) {
+  if (i %in% c(2,4,6)) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group_ND, group2, visit_alpha, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group_ND, group2, visit_alpha, all_of(test_vec[i]))
+  }
+  names(df_i)[ncol(df_i)] <- "value"
+  
+  df_i <- df_i %>% filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(group2)
+  
+  # Plot
+  multi.group <- 
+    df_i %>%
+    dabest(group_ND, value, 
+           idx = list(group_name),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group_ND, palette = custom.pal2,
+             swarmplot.params=list(alpha=df_i$visit_alpha), tick.fontsize = 14,
+             rawplot.ylabel = str_vec1[i],
+             show.legend = FALSE))
+}
+```
+
+# Disease duration
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# ROC/AUC within different disease duration
+df <- df_PREDIGT2 %>%
+  mutate(group3 = ifelse(group == "PD", "PD", "HC+OND"))
+levels(df$group3) <- c("HC+OND", "PD")
+table(df %>% select(group, group3))
+compareList <- list(c("HC", "PD"), c("OND", "PD"), c("HC+OND", "PD"))
+
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+test_vec2 <- variables$Long.name[which(variables$ROC == 1)]
+type1_vec <- variables$Type1[which(variables$ROC == 1)]
+type2_vec <- variables$Type2[which(variables$ROC == 1)]
+group_name <- levels(df$group)
+
+dfPlt_year <- data.frame()
+res_year <- data.frame()
+
+for (year in c(2, 5, 10, 15, 20, max(data$disease_duration, na.rm = T))) {
+  dfPlt <- data.frame()
+  res <- data.frame()
+  
+  df_year <- df %>% filter(group == "HC" | disease_duration <= year) %>% droplevels()
+  for (i in seq_len(length(test_vec))) {
+    df_i <- df_year %>% select(group, group3, sex, all_of(test_vec[i]))
+    names(df_i)[ncol(df_i)] <- "value"
+    
+    for (i_group in 1:3) {
+      if (i_group < 3) {
+        df_temp <- df_i %>% select(group, value, sex)
+      } else {
+        df_temp <- df_i %>% select(group3, value, sex)
+        names(df_temp)[names(df_temp) == "group3"] <- "group"
+      }
+      
+      result_A <- ROC_summary(df_temp,
+                              compareList[[i_group]],
+                              test_vec2[i],
+                              type1_vec[i],
+                              type2_vec[i], 
+                              direction = directions[i])
+      dfPlt <- bind_rows(dfPlt, result_A$dfPlt)
+      dfPlt$year <- year
+      
+      res <- bind_rows(res, result_A$res)
+      res$year <- year
+      res$nHC <- nrow(df_i %>% filter(group == "HC"))
+      res$nPD <- nrow(df_i %>% filter(group == "PD"))
+      res$nOND <- nrow(df_i %>% filter(group == "OND"))
+    }
+  }
+  dfPlt_year <- bind_rows(dfPlt_year, dfPlt)
+  res_year <- bind_rows(res_year, res)
+}
+res_year
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+numbers <- str_extract_all(res_year$auc, "\\d+(\\.\\d+)?")
+res_year$auc_value <- rep(0, nrow(res_year))
+res_year$auc_ci1 <- rep(0, nrow(res_year))
+res_year$auc_ci2 <- rep(0, nrow(res_year))
+for (i in seq_len(nrow(res_year))) {
+  res_year$auc_value[i] <- as.numeric(numbers[[i]][1])
+  res_year$auc_ci1[i] <- as.numeric(numbers[[i]][2])
+  res_year$auc_ci2[i] <- as.numeric(numbers[[i]][3])
+}
+res_year$group <- factor(res_year$group, levels = c("PD vs HC", "PD vs OND", "PD vs HC+OND"))
+levels(res_year$group) <- c("PD vs HC",
+                           "PD vs OND",
+                           "PD vs HC+OND")
+res_year$tests <- factor(res_year$tests, levels = unique(res_year$tests))
+levels(res_year$tests) <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+# original
+ggplot(res_year %>% filter(tests %in% levels(res_year$tests)[c(1,3,5)]), aes(year, auc_value))+
+  geom_point()+
+  geom_errorbar(aes(ymin = auc_ci1, ymax = auc_ci2))+
+  geom_hline(yintercept = 0.5, linetype = "dashed")+
+  geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")+
+  facet_grid(rows= vars(tests), cols = vars(group)) +
+  scale_y_continuous(breaks = seq(0,1, by=0.1))+
+  theme_bw()+
+  labs(x = "Disease duration (years)",
+       y = "AUC(95% CI)")
+
+# simplified
+ggplot(res_year %>% filter(tests %in% levels(res_year$tests)[c(2,4,6)]), aes(year, auc_value))+
+  geom_point()+
+  geom_errorbar(aes(ymin = auc_ci1, ymax = auc_ci2))+
+  geom_hline(yintercept = 0.5, linetype = "dashed")+
+  geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")+
+  facet_grid(rows= vars(tests), cols = vars(group)) +
+  scale_y_continuous(breaks = seq(0,1, by=0.1))+
+  theme_bw()+
+  labs(x = "Disease duration (years)",
+       y = "AUC(95% CI)")
+
+res_year %>% filter(tests == "Original Questionnaire", group == "PD vs HC") %>% select(year, nHC, nPD, nOND)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# ROC/AUC within different disease duration
+df <- data %>%
+  filter(!is.na(PREDIGT_O_UPSIT)) %>% 
+  mutate(group3 = ifelse(group == "PD", "PD", "HC+OND"))
+levels(df$group3) <- c("HC+OND", "PD")
+table(df %>% select(group, group3))
+compareList <- list(c("HC", "PD"), c("OND", "PD"), c("HC+OND", "PD"))
+
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+test_vec2 <- variables$Long.name[which(variables$ROC == 1)]
+type1_vec <- variables$Type1[which(variables$ROC == 1)]
+type2_vec <- variables$Type2[which(variables$ROC == 1)]
+group_name <- levels(df$group)
+
+dfPlt_year <- data.frame()
+res_year <- data.frame()
+
+for (year in c(2, 5, 10, 15, 20, max(data$disease_duration, na.rm = T))) {
+  dfPlt <- data.frame()
+  res <- data.frame()
+  
+  df_year <- df %>% filter(group == "HC" | disease_duration <= year) %>% droplevels()
+  for (i in seq_len(length(test_vec))) {
+    df_i <- df_year %>% select(group, group3, sex, all_of(test_vec[i]))
+    names(df_i)[ncol(df_i)] <- "value"
+    
+    for (i_group in 1:3) {
+      if (i_group < 3) {
+        df_temp <- df_i %>% select(group, value, sex)
+      } else {
+        df_temp <- df_i %>% select(group3, value, sex)
+        names(df_temp)[names(df_temp) == "group3"] <- "group"
+      }
+      
+      result_A <- ROC_summary(df_temp,
+                              compareList[[i_group]],
+                              test_vec2[i],
+                              type1_vec[i],
+                              type2_vec[i], 
+                              direction = directions[i])
+      dfPlt <- bind_rows(dfPlt, result_A$dfPlt)
+      dfPlt$year <- year
+      
+      res <- bind_rows(res, result_A$res)
+      res$year <- year
+      res$nHC <- nrow(df_i %>% filter(group == "HC"))
+      res$nPD <- nrow(df_i %>% filter(group == "PD"))
+      res$nOND <- nrow(df_i %>% filter(group == "OND"))
+    }
+  }
+  dfPlt_year <- bind_rows(dfPlt_year, dfPlt)
+  res_year <- bind_rows(res_year, res)
+}
+res_year
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+numbers <- str_extract_all(res_year$auc, "\\d+(\\.\\d+)?")
+res_year$auc_value <- rep(0, nrow(res_year))
+res_year$auc_ci1 <- rep(0, nrow(res_year))
+res_year$auc_ci2 <- rep(0, nrow(res_year))
+for (i in seq_len(nrow(res_year))) {
+  res_year$auc_value[i] <- as.numeric(numbers[[i]][1])
+  res_year$auc_ci1[i] <- as.numeric(numbers[[i]][2])
+  res_year$auc_ci2[i] <- as.numeric(numbers[[i]][3])
+}
+res_year$group <- factor(res_year$group, levels = c("PD vs HC", "PD vs OND", "PD vs HC+OND"))
+levels(res_year$group) <- c("PD vs HC",
+                           "PD vs OND",
+                           "PD vs HC+OND")
+res_year$tests <- factor(res_year$tests, levels = unique(res_year$tests))
+levels(res_year$tests) <- c("Original Questionnaire", "Simplified Questionnaire", 
+            "Original Smell Test (UPSIT)", "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+
+# original
+ggplot(res_year %>% filter(tests %in% levels(res_year$tests)[c(1,3,5)]), aes(year, auc_value))+
+  geom_point()+
+  geom_errorbar(aes(ymin = auc_ci1, ymax = auc_ci2))+
+  geom_hline(yintercept = 0.5, linetype = "dashed")+
+  geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")+
+  facet_grid(rows= vars(tests), cols = vars(group)) +
+  scale_y_continuous(breaks = seq(0,1, by=0.1))+
+  theme_bw()+
+  labs(x = "Disease duration (years)",
+       y = "AUC(95% CI)")
+
+# simplified
+ggplot(res_year %>% filter(tests %in% levels(res_year$tests)[c(2,4,6)]), aes(year, auc_value))+
+  geom_point()+
+  geom_errorbar(aes(ymin = auc_ci1, ymax = auc_ci2))+
+  geom_hline(yintercept = 0.5, linetype = "dashed")+
+  geom_hline(yintercept = 0.8, color = "red", linetype = "dashed")+
+  facet_grid(rows= vars(tests), cols = vars(group)) +
+  scale_y_continuous(breaks = seq(0,1, by=0.1))+
+  theme_bw()+
+  labs(x = "Disease duration (years)",
+       y = "AUC(95% CI)")
+
+res_year %>% filter(tests == "Original Questionnaire", group == "PD vs HC") %>% select(year, nHC, nPD, nOND)
+```
+
+## Subjective vs objective olfaction
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5.5
+
+df <- data
+df$visit_alpha <- ifelse(!is.na(df$UPSIT_scr) & !is.na(df$PREDIGT_S_B_motor) & !is.na(df$neuroscent_scr), 1, 0.3)
+df$olfaction_self <- factor(df$olfaction_self, levels = c("No", "Yes, with known cause", "Yes, without known cause" ))
+levels(df$olfaction_self) <- c(paste("No subjective hyposmia","", sep = "\n"), 
+                                   paste("Subj. hyposmia", "with known cause", sep = "\n"), 
+                                   paste("Subj. hyposmia", "without known cause", sep = "\n"))
+
+# by group
+test_vec <- c("UPSIT_scr", "neuroscent_scr")
+str_vec1 <- c(paste("Objective hyposmia", "(UPSIT)", sep = "\n"), paste("Objective hyposmia", "(Simplified Smell Test)", sep = "\n"))
+group_name <- levels(df$group)
+
+for (i in seq_len(length(test_vec))) {
+  if (i == 2) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group, group2, visit_alpha, olfaction_self, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group, group2, visit_alpha, olfaction_self, all_of(test_vec[i]))
+  }
+  
+  names(df_i)[ncol(df_i)] <- "value"
+  
+  df_i <- df_i %>% filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(group2)
+  
+  
+  
+  # Plot
+  multi.group <- 
+    df_i %>%
+    dabest(olfaction_self, value, 
+           idx = list(levels(df$olfaction_self)),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i$group2))],
+             tick.fontsize = 14, # swarmplot.params=list(alpha=df_i$visit_alpha), 
+             rawplot.ylabel = str_vec1[i],
+             show.legend = FALSE))
+}
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5.5
+
+# by sex
+df <- data
+df$visit_alpha <- ifelse(!is.na(df$UPSIT_scr) & !is.na(df$PREDIGT_S_B_motor) & !is.na(df$neuroscent_scr), 1, 0.3)
+df$olfaction_self <- factor(df$olfaction_self, levels = c("No", "Yes, with known cause", "Yes, without known cause" ))
+levels(df$olfaction_self) <- c(paste("No subjective hyposmia","", sep = "\n"), 
+                                   paste("Subj. hyposmia", "with known cause", sep = "\n"), 
+                                   paste("Subj. hyposmia", "without known cause", sep = "\n"))
+df <- df %>% 
+  mutate(sex_olfaction = ifelse(sex == "Female", paste0("F: ", olfaction_self), paste0("M: ", olfaction_self)))
+
+# by group
+test_vec <- c("UPSIT_scr", "neuroscent_scr")
+str_vec1 <- c(paste("Objective hyposmia", "(UPSIT)", sep = "\n"), paste("Objective hyposmia", "(Simplified Smell Test)", sep = "\n"))
+group_name <- levels(df$group)
+
+for (i in seq_len(length(test_vec))) {
+  if (i == 2) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group, group2, visit_alpha, sex, sex_olfaction, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group, group2, visit_alpha, sex, sex_olfaction, all_of(test_vec[i]))
+  }
+  names(df_i)[ncol(df_i)] <- "value"
+  
+  df_i <- df_i %>% filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(group2)
+  
+  # Plot: F
+  df_i_F <- df_i %>%
+    filter(sex == "Female") %>% 
+    droplevels() 
+    
+  multi.group <- 
+    df_i_F %>%
+    dabest(sex_olfaction, value, 
+           idx = list(paste0("F: ", levels(df$olfaction_self))),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i_F$group2))],
+             tick.fontsize = 14, # swarmplot.params=list(alpha=df_i_F$visit_alpha), 
+             rawplot.ylabel = str_vec1[i],
+             show.legend = FALSE))
+  
+  # Plot: M
+  df_i_M <- df_i %>%
+    filter(sex == "Male") %>% 
+    droplevels() 
+    
+  multi.group <- 
+    df_i_M %>% 
+    dabest(sex_olfaction, value, 
+           idx = list(paste0("M: ", levels(df$olfaction_self))),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = group2, palette = custom.pal[which(names(custom.pal) %in% unique(df_i_M$group2))],
+             tick.fontsize = 14, # swarmplot.params=list(alpha=df_i_M$visit_alpha), 
+             rawplot.ylabel = str_vec1[i],
+             show.legend = FALSE))
+}
+```
+
+## Score pairs
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 10
+
+alpha <- 0.3
+  
+thresholds <- res_all_component %>% filter(sex == "All", group == "PD vs HC+OND") %>% droplevels() %>% select(tests, cut_all) 
+thresholds$direction <- rep("",nrow(thresholds))
+thresholds$cut <- rep(0,nrow(thresholds))
+for (i in 1:nrow(thresholds)) {
+  thresholds$direction[i] <- str_split(thresholds$cut_all[i], " ")[[1]][1]
+  thresholds$cut[i] <- as.numeric(str_split(thresholds$cut_all[i], " ")[[1]][2])
+}
+
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+
+df <- df_PREDIGT2 %>% select(ID, group, all_of(test_vec))
+pList <- list()
+for (i in 1:3) {
+  if (i == 1) {
+    ind <- c(1,2)
+    xstr <- "Questionnaire Score"
+  } else if (i == 2) {
+    ind <- c(3,4)
+    xstr <- "Smell Test Score"
+  } else {
+    ind <- c(5,6)
+    xstr <- "PREDIGT Summary Score"
+  }
+  
+  dfi <- df %>% select(ID, group, all_of(test_vec)[ind]) 
+  names(dfi) <- c("ID", "group", "original", "simplified")
+  
+  thresholds_i <- thresholds[ind,4]
+  
+  # Min-Max Scaling
+  min <- min(dfi$original)
+  max <- max(dfi$original)
+  dfi$original <- (dfi$original - min)/(max - min)
+  thresholds_i[1] <- (thresholds_i[1] - min)/(max - min)
+  
+  min <- min(dfi$simplified)
+  max <- max(dfi$simplified)
+  dfi$simplified <- (dfi$simplified - min)/(max - min)
+  thresholds_i[2] <- (thresholds_i[2] - min)/(max - min)
+  
+  if (i == 2) {
+    dfi <- dfi %>%
+      mutate(
+        class_original = ifelse(original <= thresholds_i[1], "PD", "Other"),
+        class_simplified = ifelse(simplified <= thresholds_i[2], "PD", "Other")
+      ) %>% 
+      mutate(not_matched = factor(ifelse(class_original == class_simplified, "No", "Yes")))
+    
+    dfi_long <- dfi %>%
+      pivot_longer(-c(ID, group, class_original, class_simplified, not_matched), names_to = "test", values_to = "value") 
+    dfi_long$group <- factor(dfi_long$group)
+    
+    # https://stackoverflow.com/questions/39533456/how-to-jitter-both-geom-line-and-geom-point-by-the-same-magnitude
+    set.seed(100)
+    pd <- position_dodge(0.1)
+    
+    p1 <- ggplot(dfi_long, aes(test, value, group = ID, color = group, alpha = not_matched)) + 
+      geom_line(position = pd) +
+      geom_point(position = pd)+
+      scale_color_manual(name = "", values = c("#1F78B4", "#AF026C", "#33A02C"))+
+      scale_alpha_discrete(guide = "none")+ 
+      annotate("rect", xmin = 0.7, xmax = 1.3, 
+               ymin = 0, ymax = thresholds_i[1], alpha = alpha, fill = "#AF026C")+ 
+      annotate("rect", xmin = 0.7, xmax = 1.3, 
+               ymin = thresholds_i[1], ymax = 1, alpha = alpha, fill = "#1F78B4")+ 
+      annotate("rect", xmin = 1.7, xmax = 2.3, 
+               ymin = 0, ymax = thresholds_i[2], alpha = alpha, fill = "#AF026C")+ 
+      annotate("rect", xmin = 1.7, xmax = 2.3, 
+               ymin = thresholds_i[2], ymax = 1, alpha = alpha, fill = "#1F78B4")+
+      facet_wrap(~group, nrow = 3, axes = "all", axis.labels = "all")+
+      theme_bw()+
+      theme(text = element_text(size = 12),
+            axis.title.x = element_blank())+
+      labs(title = xstr)
+  } else {
+    dfi <- dfi %>%
+      mutate(
+        class_original = ifelse(original >= thresholds_i[1], "PD", "Other"),
+        class_simplified = ifelse(simplified >= thresholds_i[2], "PD", "Other")
+      ) %>% 
+      mutate(not_matched = factor(ifelse(class_original == class_simplified, "No", "Yes")))
+    
+    dfi_long <- dfi %>%
+      pivot_longer(-c(ID, group, class_original, class_simplified, not_matched), names_to = "test", values_to = "value") 
+    dfi_long$group <- factor(dfi_long$group)
+    
+    p1 <- ggplot(dfi_long, aes(test, value, group = ID, color = group, alpha = not_matched)) + 
+      geom_line()+
+      geom_point()+
+      scale_color_manual(name = "", values = c("#1F78B4", "#AF026C", "#33A02C"))+
+      scale_alpha_discrete(guide = "none")+ 
+      annotate("rect", xmin = 0.7, xmax = 1.3, 
+               ymin = 0, ymax = thresholds_i[1], alpha = alpha, fill = "#1F78B4")+ 
+      annotate("rect", xmin = 0.7, xmax = 1.3, 
+               ymin = thresholds_i[1], ymax = 1, alpha = alpha, fill = "#AF026C")+ 
+      annotate("rect", xmin = 1.7, xmax = 2.3, 
+               ymin = 0, ymax = thresholds_i[2], alpha = alpha, fill = "#1F78B4")+ 
+      annotate("rect", xmin = 1.7, xmax = 2.3, 
+               ymin = thresholds_i[2], ymax = 1, alpha = alpha, fill = "#AF026C")+
+      facet_wrap(~group, nrow = 3, axes = "all", axis.labels = "all")+
+      theme_bw()+
+      theme(text = element_text(size = 12),
+            axis.title.x = element_blank())+
+      labs(title = xstr)
+  }
+  
+  
+  
+  if (i == 1) {
+    p1 <- p1 + labs(y = "Scaled (min-max) scores")
+  } else {
+    p1 <- p1 + theme(axis.title.y = element_blank())
+  }
+  
+  pList[[i]] <- p1
+}
+
+ggarrange(plotlist = pList, ncol = 3, common.legend = TRUE, legend = "bottom")
+```
+
+# race
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 45
+#| fig-height: 10
+
+data$race_dir2 <- factor(data$race_dir2, levels = c("White", "Non-white", "Did not answer"))
+
+# plot
+group.names <- levels(data$race_dir)
+my.colors <- c("lightcyan2", "purple", "blue", "red", "magenta", "brown", "seagreen3", "orange", "black", "gray50") # paleturquoise
+custom.pal <- setNames(my.colors, group.names)
+
+# Supplemental Figure 10
+df <- data
+
+# by group
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+str_vec1 <- c("Original Questionnaire", "Simplified Questionnaire", 
+            paste("Original Smell Test", "(UPSIT)", sep = "\n"), "Simplified Smell Test", 
+            "Original PREDIGT", "Simplified PREDIGT")
+group_name <- levels(df$group)
+
+# show legend
+i <- 1
+df_i <- df %>% select(group, race_dir, race_dir2, all_of(test_vec[i]))
+names(df_i)[ncol(df_i)] <- "value"
+
+df_i <- df_i %>% filter(!is.na(value)) %>%
+  droplevels() %>%
+  arrange(race_dir)
+
+# Plot
+multi.group <-
+  df_i %>%
+  dabest(group, value, idx = list(group_name), paired = FALSE)
+
+multi.group.mean_diff <- multi.group %>% mean_diff()
+
+set.seed(100)
+print(
+  plot(
+    multi.group.mean_diff,
+    color.column = race_dir,
+    palette = custom.pal[which(names(custom.pal) %in% unique(df_i$race_dir))],
+    swarmplot.params = list(alpha = 1),
+    tick.fontsize = 14,
+    rawplot.ylabel = str_vec1[i]
+  )
+)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 5
+ 
+# effect size ylim
+effsize.ymax <- c(90, 200, 5, 2, 70, 80)
+effsize.ymin <- c(-10, -10, -20, -6, -10, -10)
+
+# All tests
+for (i in seq_len(length(test_vec))) {
+  if (i %in% c(2,4,6)) { #Simplified
+    df_i <- df %>% 
+      filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels() %>% 
+      select(group, race_dir, all_of(test_vec[i]))
+  } else {
+    df_i <- df %>% select(group, race_dir, all_of(test_vec[i]))
+  }
+  names(df_i)[ncol(df_i)] <- "value"
+  
+  df_i <- df_i %>% filter(!is.na(value)) %>% 
+    droplevels() %>% 
+    arrange(race_dir)
+  
+  # Plot
+  multi.group <- 
+    df_i %>%
+    dabest(group, value, 
+           idx = list(group_name),
+           paired = FALSE
+    )
+  
+  multi.group.mean_diff <- multi.group %>% mean_diff() 
+  
+  set.seed(100)
+  print(plot(multi.group.mean_diff, color.column = race_dir, palette = custom.pal[which(names(custom.pal) %in% unique(df_i$race_dir))],
+             swarmplot.params=list(alpha=1), tick.fontsize = 14,
+             rawplot.ylabel = str_vec1[i], effsize.ylim = c(effsize.ymin[i], effsize.ymax[i]),
+             show.legend = FALSE))
+}
+```
+
+```{r}
+
+```

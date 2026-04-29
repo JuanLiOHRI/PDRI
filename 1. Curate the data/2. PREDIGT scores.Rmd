@@ -1,0 +1,401 @@
+---
+title: "The PREDIGT Trial data - data curation: PREDIGT scores"
+author: "Juan Li"
+date: "2025-01-20"
+output:  
+  bookdown::html_document2:
+    toc: true
+    number_sections: true
+    toc_float: true
+    fig_caption: yes
+    global_numbering: true 
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=8
+)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+source("PREDIGTScr.R", echo=TRUE)
+```
+
+```{r}
+data <- read.csv("Curated data/Ottawa_trial_combine_curated.csv", header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+varList <- read.csv("Worksheets/curated_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+```
+
+# PREDIGT score
+
+```{r}
+FG  <- TRUE # including factor G?
+FT  <- TRUE # including factor T?
+
+# PPV and NPV
+prevalence <- 1/100 # prevalence
+plotPPV <- TRUE
+
+# compare AUC in Female vs Male
+sex_ind <- 0 # 0: Both; 1: Female; 2: Male
+```
+
+
+```{r}
+scrCalc <- function(data, varStr2, coefV, vFH, newVar, print = FALSE,
+                    varStr_motor = NULL, coefV_motor = c(0.25, 1, 1)) {
+  
+  if (print) {
+    for (i in 1:length(varStr2)) {
+      print(table(data %>% select(all_of(varStr2[i])), useNA = "ifany"))
+    }
+  }
+  # w/o motor
+  varStr1 <- c(c("ID", "group", "sex","age"), varStr2)
+  
+  ind_question <- NULL # Only in self-report
+  ind_D <- which(varStr2 == vFH)
+  ind_E <- c(1:(ind_D-1))
+  ind_I <- c((ind_D+1):length(varStr2))
+  
+  data$new <- PREDIGTScr(data, varStr1, varStr2, coefV, ind_question, unique(data$EVENT_ID), FG, FT, ind_E, 
+                         ind_D, ind_I, method = 1)$data$score
+  names(data)[which(names(data) == "new")] <- newVar
+  
+  # with motor
+  if (!is.null(varStr_motor)){
+    if (print) {
+      for (i in 1:length(varStr_motor)) {
+        print(table(data %>% select(all_of(varStr_motor[i])), useNA = "ifany"))
+      }
+    }
+    varStr2 <- c(varStr2, varStr_motor)
+    coefV <- c(coefV, coefV_motor)
+    
+    varStr1 <- c(c("ID", "group", "sex","age"), varStr2)
+    
+    ind_question <- NULL # Only in self-report
+    ind_D <- which(varStr2 == vFH)
+    ind_E <- c(1:(ind_D-1))
+    ind_I <- c((ind_D+1):length(varStr2))
+    
+    data$new <- PREDIGTScr(data, varStr1, varStr2, coefV, ind_question, unique(data$EVENT_ID), FG, FT, ind_E, 
+                           ind_D, ind_I, method = 1)$data$score
+    names(data)[which(names(data) == "new")] <- paste0(newVar, "_motor")
+  }
+  
+  return(data)
+}
+```
+
+## Original
+
+```{r}
+# varStr2 <- c("Metal.PREDIGT", "Pesticide.PREDIGT", "Farm.PREDIGT", "Head.PREDIGT.M", 
+#              "Constipation.PREDIGT.M", "Smell.PREDIGT", "Smoking.PREDIGT.M", "Caffeine.PREDIGT.M", 
+#              "FH.PREDIGT.M",
+#              "Depression.PREDIGT.M", "Anxiety.PREDIGT.M", "RBD.PREDIGT")
+varStr2 <- varList$Short.name[which(varList$Original == 1)]
+
+# Coeffcients
+coefV <- c(0.5,     # 1:  Metal
+           0.25,    # 2:  Pesiticide
+           0.25,    # 3:  Farm
+           0.5,     # 4:  head trauma
+           0.5,     # 5:  constipation
+           0.5,     # 6:  olfaction
+           -0.0625, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+           -0.125,  # 8:  caffeine: >=1*1, >=2*2
+           0.125,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+           0.25,    # 10: depression
+           0.25,    # 11: anxiety
+           0.25     # 12: RBD
+)
+
+data <- scrCalc(data, varStr2, coefV, vFH = "family_history_dir", newVar = "PREDIGT_O", TRUE,
+                NULL)
+
+# score range
+df_range <- data[1:2,] %>% select(-PREDIGT_O)
+# min: 40 yrs female who responded negative to all the risk factors
+df_range[1, which(names(data) %in% varStr2)] <- c(0,     # 1:  Metal
+                                                  0,    # 2:  Pesiticide
+                                                  0,    # 3:  Farm
+                                                  0,     # 4:  head trauma
+                                                  0,     # 5:  constipation
+                                                  0,     # 6:  olfaction
+                                                  12, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+                                                  2,  # 8:  caffeine: >=1*1, >=2*2
+                                                  0,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  0,    # 10: depression
+                                                  0,    # 11: anxiety
+                                                  0)     # 12: RBD
+df_range[1, "sex"] <- "Female"
+df_range[1, "age"] <- 40
+# min: 100 yrs male who responded positive to all the risk factors
+df_range[2, which(names(df_range) %in% varStr2)] <- c(1,     # 1:  Metal
+                                                  1,    # 2:  Pesiticide
+                                                  1,    # 3:  Farm
+                                                  2,     # 4:  head trauma
+                                                  1,     # 5:  constipation
+                                                  1,     # 6:  olfaction
+                                                  0, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+                                                  0,  # 8:  caffeine: >=1*1, >=2*2
+                                                  4,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  1,    # 10: depression
+                                                  1,    # 11: anxiety
+                                                  1)     # 12: RBD
+df_range[2, "sex"] <- "Male"
+df_range[2, "age"] <- 100
+df_range <- scrCalc(df_range, varStr2, coefV, vFH = "family_history_dir", newVar = "PREDIGT_O", FALSE,
+                NULL)
+df_range$PREDIGT_O
+```
+
+## Simplified, binary
+
+```{r}
+# varStr2 <- c("Constipation.PREDIGT.B", "Smell.PREDIGT",
+#              "FH.PREDIGT.B",
+#              "Depression.PREDIGT.B", "Anxiety.PREDIGT.B", "RBD.PREDIGT")
+varStr2 <- varList$Short.name[which(varList$Simple_b == 1)]
+
+# Coeffcients
+coefV <- c(0.5,     # 1:  constipation
+           0.5,     # 2:  olfaction
+           0.5,     # 3:  family history
+           0.25,    # 4: depression
+           0.25,    # 5: anxiety
+           0.25     # 6: RBD
+)
+
+# add motor
+# varStr_motor <- c("Fatigue.PREDIGT.B", "Handwriting.PREDIGT.B", "Slowness.PREDIGT.B")
+varStr_motor <- varList$Short.name[which(varList$Motor_b == 1)]
+coefV_motor <- c(0.25,    # 7: fatigue
+                 1,       # 8: handwriting
+                 1        # 9: slowness
+)  
+
+data <- scrCalc(data, varStr2, coefV, vFH = "family_history_dir_b", newVar = "PREDIGT_S_B", TRUE,
+                varStr_motor, coefV_motor)
+
+# score range
+df_range <- data[1:2,] %>% select(-c(PREDIGT_S_B, PREDIGT_S_B_motor))
+# min: 40 yrs female who responded negative to all the risk factors
+df_range[1, which(names(df_range) %in% varStr2)] <- c(0,     # 5:  constipation
+                                                  0,     # 6:  olfaction
+                                                  0,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  0,    # 10: depression
+                                                  0,    # 11: anxiety
+                                                  0)     # 12: RBD
+df_range[1, which(names(df_range) %in% varStr_motor)] <- c(0,     # 7: fatigue
+                                                  0,     # 8: handwriting
+                                                  0)     # 9: slowness
+df_range[1, "sex"] <- "Female"
+df_range[1, "age"] <- 40
+# min: 100 yrs male who responded positive to all the risk factors
+df_range[2, which(names(df_range) %in% varStr2)] <- c(1,     # 1:  Metal
+                                                  1,    # 2:  Pesiticide
+                                                  1,    # 3:  Farm
+                                                  2,     # 4:  head trauma
+                                                  1,     # 5:  constipation
+                                                  1,     # 6:  olfaction
+                                                  0, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+                                                  0,  # 8:  caffeine: >=1*1, >=2*2
+                                                  4,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  1,    # 10: depression
+                                                  1,    # 11: anxiety
+                                                  1)     # 12: RBD
+df_range[2, which(names(df_range) %in% varStr_motor)] <- c(1,     # 7: fatigue
+                                                  1,     # 8: handwriting
+                                                  1)     # 9: slowness
+df_range[2, "sex"] <- "Male"
+df_range[2, "age"] <- 100
+df_range <- scrCalc(df_range, varStr2, coefV, vFH = "family_history_dir_b", newVar = "PREDIGT_S_B", FALSE,
+                varStr_motor, coefV_motor)
+df_range$PREDIGT_S_B
+df_range$PREDIGT_S_B_motor
+```
+
+## Simplified, multi-level
+
+```{r}
+# varStr2 <- c("Constipation.PREDIGT.M", "Smell.PREDIGT", 
+#              "FH.PREDIGT.M",
+#              "Depression.PREDIGT.M", "Anxiety.PREDIGT.M", "RBD.PREDIGT")
+varStr2 <- varList$Short.name[which(varList$Simple_m == 1)]
+
+# Coeffcients
+coefV <- c(0.25,    # 1:  constipation: Never, 0; Sometimes, 0.25; Regularly/Often: 0.5
+           0.5,     # 2:  olfaction
+           0.125,   # 3:  family history: 3rd*1, 2nd*2, 1st*4
+           0.125,   # 4: depression: Normal, 0; Slight/Mild, 0.125; Moderate/Severe, 0.25
+           0.125,   # 5: anxiety: Normal, 0; Slight/Mild, 0.125; Moderate/Severe, 0.25
+           0.25     # 6: RBD
+)  
+
+# add motor
+#varStr_motor <- c("Fatigue.PREDIGT.M", "Handwriting.PREDIGT.M", "Slowness.PREDIGT.M")
+varStr_motor <- varList$Short.name[which(varList$Motor_m == 1)]
+coefV_motor <- c(0.125,    # 7: fatigue: Normal, 0; Slight/Mild, 0.125; Moderate/Severe, 0.25
+                 0.5,      # 8: handwriting: Normal, 0; Slight/Mild, 0.5; Moderate/Severe, 1
+                 0.5       # 9: slowness: Normal, 0; Slight/Mild, 0.5; Moderate/Severe, 1
+)  
+
+data <- scrCalc(data, varStr2, coefV, vFH = "family_history_dir", newVar = "PREDIGT_S_M", TRUE,
+                varStr_motor, coefV_motor)
+```
+
+# 2-step combined
+
+```{r}
+df_dev <- data %>% filter(group %in% c("HC", "PD/DLB")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "HC", 0, 1))
+
+df_res <- data.frame()
+
+# PREDIGT_O + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_O + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_O_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_O + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_S_B + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B_motor + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_S_B_motor + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_motor_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B_motor + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_S_M + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M_motor + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_S_M_motor + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_motor_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M_motor + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B + neuroscent_scr
+fit1 <- glm(group_num ~ PREDIGT_S_B + neuroscent_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_neuroscent <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B + neuroscent_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B_motor + neuroscent_scr
+fit1 <- glm(group_num ~ PREDIGT_S_B_motor + neuroscent_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_motor_neuroscent <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B_motor + neuroscent_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M + neuroscent_scr
+fit1 <- glm(group_num ~ PREDIGT_S_M + neuroscent_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_neuroscent <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M + neuroscent_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M_motor + neuroscent_scr
+fit1 <- glm(group_num ~ PREDIGT_S_M_motor + neuroscent_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_motor_neuroscent <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M_motor + neuroscent_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B + neuroscent_scr_2
+fit1 <- glm(group_num ~ PREDIGT_S_B + neuroscent_scr_2, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_neuroscent_2 <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B + neuroscent_scr_2",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B_motor + neuroscent_scr_2
+fit1 <- glm(group_num ~ PREDIGT_S_B_motor + neuroscent_scr_2, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_motor_neuroscent_2 <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B_motor + neuroscent_scr_2",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M + neuroscent_scr_2
+fit1 <- glm(group_num ~ PREDIGT_S_M + neuroscent_scr_2, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_neuroscent_2 <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M + neuroscent_scr_2",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_M_motor + neuroscent_scr_2
+fit1 <- glm(group_num ~ PREDIGT_S_M_motor + neuroscent_scr_2, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_M_motor_neuroscent_2 <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_M_motor + neuroscent_scr_2",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+```
+
+```{r}
+write.csv(df_res, "Curated data/Two_step_combine_betas.csv", row.names = FALSE)
+write.csv(data, "Curated data/Ottawa_trial_combine_curated_scores.csv", row.names = FALSE)
+```
+
+```{r}
+
+```
+

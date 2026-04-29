@@ -1,0 +1,371 @@
+﻿Short.name,Long.name,Question,Type,Option,Note,Original,Simple_b,Simple_m,Motor_b,Motor_m,Table1,Cat_summary,OR,Con_summary_table,Con_summary_figure,ROC,ROC_MDS,ROC_ASAP,Table1_MDS,Type1,Type2
+EVENT_ID,EVENT_ID,,text,BL,Due to the function `PREDIGTScr.R`,,,,,,,,,,,,,,,,
+ID,ID,What is your study_id?  You can find it on the email with the study link.  ,text,,,,,,,,,,,,,,,,,,
+visitYear,visitYear,,num,,"Derived from: 'lastActDate_1', year of visit",,,,,,,,,,,,,,,,
+lastActDate_1,lastActDate_1,,datetime,,Last action date of PREDIGT 1.0,,,,,,,,,,,,,,,,
+who_1,who_1,Who are you completing this questionnaire for?,cat,"Myself / Myself, with help/ Caregiver/family member",PREDIGT 1.0,,,,,,,,,,,,,,,,
+lastActDate_2,lastActDate_2,,datetime,,Last action date of PREDIGT 2.0,,,,,,,,,,,,,,,,
+who_2,who_2,Who are you completing this questionnaire for?,cat,"Myself / Myself, with help/ Caregiver/family member",PREDIGT 2.0,,,,,,,,,,,,,,,,
+sex,Sex,"What is your biological sex (defined here as the sex you were assigned at birth)?  Please note: this is a mandatory question. If you choose ""other"", please explain in the textbox. ",cat,Female / Male / Other,"No one chose ""Other""",,,,,,1,,,,,,,,1,,
+age,Age,"As of today, how old are you?",num,,,,,,,,1,,,,1,,,,1,,
+ethnicity,Ethnicity,Do you identify your ethnicity as being Hispanic or Latino (Spanish origin)?,cat,No / Yes / N/A,,,,,,,,1,,,,,,,,,
+race_dir,Race,Do you identify as …,cat,"Ashkenazi Jewish
+Ashkenazi Jewish, White
+Asian
+Asian, White
+Did not answer
+Indigenous Peoples in Canada (the First Nations, Inuit and Métis), White
+Native Hawaiian or other Pacific Islander, White
+Other, Armenian-Iranian
+Other, Black
+White   ",Derived from the race variables,,,,,,,1,,,,,,,1,,
+race_dir2,Race2,Do you identify as …,cat,"Did not answer
+Non-white
+White",Derived from the race variables,,,,,,,1,,,,,,,1,,
+group,group,,cat,"HC
+PD/DLB
+Other",Derived from: `diagnosis_final`,,,,,,,,,,,,,,,,
+group2,group2,,cat,"HC
+PD/DLB
+MSA/PSP
+AON
+MCI/DEM",Derived from: `diagnosis_final`,,,,,,,,,,,,,,,,
+diagnosis,diagnosis,,cat,24 different diagnosis,Derived from: `diagnosis_final`- combine the different MSA types in ,,,,,,,,,,,,,,,,
+diagnosis_final,diagnosis_final,,cat,27 different diagnosis,"The original confirmed diagnosis, from ""Final diagnosis.csv"", ",,,,,,,,,,,,,,,,
+diagnosis_self,diagnosis_self,Have you been diagnosed with any of the neurological diseases listed below?   Please note: diagnosis will be confirmed by your physician using your health records. ,cat,"Parkinson disease (PD) / Multiple system atrophy (MSA) / Progressive Supranuclear Palsy (PSP) / Dementia with Lewy Bodies (DLB) / Corticobasal syndrome (CBS) / Essential, familial tremor (ET) / Other tremor condition / Alzheimer’s disease (AD) / Frontotemporal dementia (FTD) / Vascular dementia / Normal pressure hydrocephalus (NPH) / None of above / Other neurological disease",,,,,,,,,,,,,,,,,
+disease_duration,Disease duration at visit in years,,,,"Derived from: `diagnosis_age_dir`, `age`",,,,,,1,,,,,,,,1,,
+diagnosis_age_dir,Age of diagnosis,"At what age/In which year, you were diagnosed by a physician with the neurological disease selected in the prior question?  ",num,,"Derived from: `diagnosis_age`, `diagnosis_year`, `age`and `visitYear`",,,,,,,,,,,,,,1,,
+symptom_age_dir,Age of first symptom,"At what age/In which year, did you notice the first symptom?",num,,"Derived from: `symptom_age`, `symptom_year`, `age`and `visitYear`",,,,,,,,,,,,,,1,,
+metal_dir,"Metal, binary","In your lifetime, have you engaged in activities listed below for a total of 100 or more days at work or at home?    	welding, brazing, or flame-cutting metal  	soldering  	working around metal dust or metal fumes   ",cat,"0 = No
+1 = Yes",,1,0,0,0,0,,1,1,,,,,,,,
+pesticide_dir,"Pesticide, binary","Over your lifetime, have you ever been exposed to a known pesticide, including herbicides (kill weeds), fungicides (kill fungus/mold), insecticides (kill insects), rodenticides (kill rats/mice), or fumigants (gas used to kill fungus/mold or insects) in scenarios listed below:    	You had a job in which you mixed, applied or were exposed in some other way to these products. 	You or someone else used chemicals to kill insects, other pests, plants, weeds, mold, or mildew in or around any house or apartment that you lived in. 	There was pesticide spraying at or around your residence when you lived there.  ",cat,"0 = No
+1 = Yes",,1,0,0,0,0,,1,1,,,,,,,,
+farm_dir,"Farm life, binary","When you grew up (from birth through age 20 years), was your residence located near agricultural fields/farm (within 0.5km)? ",cat,"0 = No
+1 = Yes",,1,0,0,0,0,,1,1,,,,,,,,
+head_injury,"Head trauma, binary","Have you ever had a head injury that was associated with loss of consciousness, or a concussion, or with other neurological symptoms in the aftermath (such as headache where the symptoms persisted several days after the event)?   Such events have occurred during sporting activities, from falls, strikes to the head, car accidents, near explosions, excessive G-force (military) or other accidents. Consider injuries from both childhood and adulthood. ",cat,No / Yes,,,,,,,,1,1,,,,,,,,
+lose_consciousness,lose_consciousness,Did you lose consciousness from any of the injuries/concussions listed above? ,cat,No / Yes / I don't remember,,,,,,,,,,,,,,,,,
+head_injury_dir,Head trauma,,cat,"0 = No head trauma
+1 = Had head trauma, no concussion
+2 = Had head trauma and concussion",,1,0,0,0,0,,1,,,,,,,,,
+head_injury_n,head_injury_n,"In your lifetime, how many head injuries have you had? Please give your best estimate.  ",num,,,,,,,,,,,,,,,,,,
+constipation_dir_b,"Constipation, binary",,cat,"0 = Never/Not Applicable
+1 = Sometimes / Regularly / Often",,1,1,0,0,0,,1,1,,,,,,,,
+constipation,Constipation (SCOPA-AUT 06),Have you experienced the need to strain hard to pass stools? ,cat,Never/Not Applicable / Sometimes / Regularly / Often,,,,,,,,1,,,,,,,,,
+constipation_dir,constipation_dir,,cat,"0 = Never/Not Applicable
+1 = Sometimes
+2 = Regularly
+3 = Often",,,,,,,,,,,,,,,,,
+constipation_dir_m,constipation_dir_m,,cat,"0 = Never/Not Applicable
+1 = Sometimes
+2 = Regularly / Often",,0,0,1,0,0,,,,,,,,,,,
+constipation_duration_unit,constipation_duration_unit,,cat,Years / Months / Weeks / Days,,,,,,,,,,,,,,,,,
+constipation_duration_clean,constipation_duration_clean,,text,,Manually cleaned: `constipation_duration`,,,,,,,,,,,,,,,,
+constipation_duration_clean_years,constipation_duration_clean_years,,num,,Derived from: `constipation_duration`- extract number and turn it to years,,,,,,,,,,,,,,,,
+constipation_before_diagnosis,constipation_before_diagnosis,If constipation happened before neurological diagnosis?,cat,"NA = HC / No constipation / Missing duration
+0 = Not before neurological diagnosis
+1 = Before neurological diagnosis",,,,,,,,,,,,,,,,,
+constipation_duration_before_diagnosis,constipation_duration_before_diagnosis,,num,,"Derived from: `constipation_duration_clean_years`, `disease_duration`",,,,,,,,,,,,,,,,
+olfaction_dir,"Subjective olfaction reduction, binary",,cat,"0 = No / Yes, with known cause
+1 = Yes, without known cause",,1,1,1,0,0,,1,1,,,,,,,,
+olfaction_self,Subjective olfaction reduction (PD NMS 02),Have you experienced the loss or change in your ability to smell or taste? ,cat,"No / Yes, without known cause / Yes, with known cause",,,,,,,,1,,,,,,,,,
+olfaction_dir2,olfaction_dir2,,cat,"0 = No
+1 = Yes, without known cause / Yes, with known cause",,,,,,,,,,,,,,,,,
+olfaction_other_dir,olfaction_other_dir,,cat,"Infection - Covid-19, flu, cold
+Allergy
+Other",,,,,,,,1,,,,,,,,,
+olfaction_duration_unit,olfaction_duration_unit,,cat,Years / Months / Weeks / Days,,,,,,,,,,,,,,,,,
+olfaction_duration_clean,olfaction_duration_clean,,text,,Manually cleaned: `olfaction_duration`,,,,,,,,,,,,,,,,
+olfaction_duration_clean_years,olfaction_duration_clean_years,,num,,Derived from: `olfaction_duration`- extract number and turn it to years,,,,,,,,,,,,,,,,
+olfaction_before_diagnosis,olfaction_before_diagnosis,If olfaction loss happened before neurological diagnosis?,cat,"NA = HC / No olfaction loss / Missing duration
+0 = Not before neurological diagnosis
+1 = Before neurological diagnosis",,,,,,,,,,,,,,,,,
+olfaction_duration_before_diagnosis,olfaction_duration_before_diagnosis,,num,,"Derived from: `olfaction_duration_clean_years`, `disease_duration`",,,,,,,,,,,,,,,,
+smoke,"Smoking, binary","Have you ever smoked cigarettes/cigars/pipes/e-cigarettes regularly, that is, at least once per day for 6 months or longer? ",cat,No / Yes,,,,,,,,1,1,,,,,,,,
+smoke_now,smoke_now,Are you currently in the habit of smoking any of these products?,cat,"No, I have stopped smoking. / Yes.",,,,,,,,,,,,,,,,,
+smoke_duration,smoke_duration,"In total, you smoked for how many years?  Please give your best estimation. If you have stopped smoking for a period of a year or more, please subtract those years. ",num,,,,,,,,,,,,,,,,,,
+smoke_dir,Smoking,,cat,"Never smoked
+Past smoking
+Current smoking",,,,,,,,1,,,,,,,,,
+smoke_dir2,smoke_dir2,,cat,"12 = Current smoking >= 20 years
+8 = Current smoking >10 years
+4 = Past smoking >= 20 years
+2 =Past smoking >10 years
+1 = Any other smoking
+0 = Never smoked",,1,0,0,0,0,,,,,,,,,,,
+caffeine,"Caffeinated beverage, binary","Do you drink or in the past have you regularly drank caffeinated beverages (e.g. caffeinated iced/hot coffee, black tea, green tea, soda)?  ",cat,No / Yes,,,,,,,,1,1,,,,,,,,
+caffeine_n_day,caffeine_n_day,,num,,Derived from: `caffeine_n_week`,,,,,,,,,,,,,,,,
+caffeine_dir,Caffeinated beverage,,cat,"0 = No caffeine, or <1 cup/day
+1 = 1-2 cups/day
+2 = >=2 cups/day",,1,0,0,0,0,,1,,,,,,,,,
+family_history_dir_b,family_history_dir_b,,cat,"0 = No
+1 = Yes",,0,1,0,0,0,,,,,,,,,,,
+family_history,"Family history of PD, binary",Do you have any family member(s) who has/have been diagnosed with Parkinson disease (PD) or Parkinsonism? ,cat,No / Yes,,,,,,,,1,1,,,,,,,,
+family_history_dir,Family history of PD,,cat,"4 = 1-degree
+2 = 2-degree
+1 = Any family history
+0 = No family history",,1,0,1,0,0,,1,,,,,,,,,
+genetic,genetic,Have you ever done any genetic test/counselling about your genetic risk of PD? ,cat,"No / Yes, but I don't remember my genetic risk of PD. / Yes, and I am aware of my genetic risk of PD.",,,,,,,,,,,,,,,,,
+genetic_dir,Genetic,,cat,"Not done genetic testing
+Done testing, don't remember results
+Done testing, none identified
+Parkin
+GBA",,,,,,,,1,,,,,,,,,
+depression_dir,"Depression, binary",,cat,"0 = other
+1 = `depression1_b == 1` and `depression2_b == 1`",,1,1,0,0,0,,1,1,,,,,,,,
+depression1_b,"Depression1, binary",,cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",,,,,,,,1,1,,,,,,,,
+depression1,Depression1 (MDS UPDRS 1.03),"Have you felt low, sad, hopeless, or unable to enjoy things? If yes, was this feeling for longer than one day at a time? Did it make it difficult for you carry out your usual activities or to be with people?  ",cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,,,,1,,,,,,,,,
+depression2_b,"Depression2, binary",,cat,"0 =Never
+1 = Occasionally / Sometimes / Often / Always",,,,,,,,1,1,,,,,,,,
+depression2,Depression2 (PDQ39.17),How often in the past have you: felt depressed?  ,cat,Never / Occasionally / Sometimes / Often / Always,,,,,,,,1,,,,,,,,,
+depression1_m,depression1_m,,cat,"0 = Normal
+1 = Slight / Mild
+2 = Moderate / Severe",,0,0,1,0,0,,,,,,,,,,,
+depression_duration_unit,depression_duration_unit,,cat,Years / Months / Weeks / Days,,,,,,,,,,,,,,,,,
+depression_duration_clean,depression_duration_clean,,text,,Manually cleaned: `depression_duration`,,,,,,,,,,,,,,,,
+depression_duration_clean_years,depression_duration_clean_years,,num,,Derived from: `depression_duration`- extract number and turn it to years,,,,,,,,,,,,,,,,
+depression_before_diagnosis,depression_before_diagnosis,If depression happened before neurological diagnosis?,cat,"NA = HC / No depression / Missing duration
+0 = Not before neurological diagnosis
+1 = Before neurological diagnosis",,,,,,,,,,,,,,,,,
+depression_duration_before_diagnosis,depression_duration_before_diagnosis,,num,,"Derived from: `depression_duration_clean_years`, `disease_duration`",,,,,,,,,,,,,,,,
+depression_med,Depression: medication,Have you ever been prescribed medication by a healthcare professional for depression/depressed mood? ,cat,No / Yes,,,,,,,,1,,,,,,,,,
+depression_covid,Depression: COVID,Has the COVID19 pandemic made you feel more depressed than you normally would either directly or indirectly? ,cat,No / Yes,,,,,,,,1,,,,,,,,,
+anxiety_dir,"Anxiety,  binary",,cat,"0 = other
+1 = `anxiety1_b == 1` and `anxiety2_b == 1`",,1,1,0,0,0,,1,1,,,,,,,,
+anxiety1_b,"Anxiety1, binary",,cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",,,,,,,,1,1,,,,,,,,
+anxiety1,Anxiety1 (MDS UPDRS 1.04),"Have you felt nervous, worried, or tense? If yes, was this feeling for longer than one day at a time? Did it make it difficult for you to follow your usual activities or to be with other people?  ",cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,,,,1,,,,,,,,,
+anxiety2_b,"Anxiety2, binary",,cat,"0 =Never
+1 = Occasionally / Sometimes / Often / Always",,,,,,,,1,1,,,,,,,,
+anxiety2,Anxiety2 (PDQ39.21),How often in the past have you: felt anxious?,cat,Never / Occasionally / Sometimes / Often / Always,,,,,,,,1,,,,,,,,,
+anxiety1_m,anxiety1_m,,cat,"0 = Normal
+1 = Slight / Mild
+2 = Moderate / Severe",,0,0,1,0,0,,,,,,,,,,,
+anxiety_duration_unit,anxiety_duration_unit,,cat,Years / Months / Weeks / Days,,,,,,,,,,,,,,,,,
+anxiety_duration_clean,anxiety_duration_clean,,text,,Manually cleaned: `anxiety_duration`,,,,,,,,,,,,,,,,
+anxiety_duration_clean_years,anxiety_duration_clean_years,,num,,Derived from: `anxiety_duration`- extract number and turn it to years,,,,,,,,,,,,,,,,
+anxiety_before_diagnosis,anxiety_before_diagnosis,If anxiety happened before neurological diagnosis?,cat,"NA = HC / No anxiety / Missing duration
+0 = Not before neurological diagnosis
+1 = Before neurological diagnosis",,,,,,,,,,,,,,,,,
+anxiety_duration_before_diagnosis,anxiety_duration_before_diagnosis,,num,,"Derived from: `anxiety_duration_clean_years`, `disease_duration`",,,,,,,,,,,,,,,,
+anxiety_med,Anxiety: medication,Have you ever been prescribed medication by a healthcare professional for anxiety?,cat,No / Yes,,,,,,,,1,,,,,,,,,
+anxiety_covid,Anxiety: COVID,Has the COVID19 pandemic made you feel more anxious than you normally would either directly or indirectly?,cat,No / Yes,,,,,,,,1,,,,,,,,,
+rbd,"RBD, binary",,cat,No / Yes,,,,,,,,1,1,,,,,,,,
+rbd_dir,rbd_dir,,cat,"0 = No
+1 = Yes",,1,1,1,0,0,,,,,,,,,,,
+rbd_duration_unit,rbd_duration_unit,,cat,Years / Months / Weeks / Days,,,,,,,,,,,,,,,,,
+rbd_duration_clean,rbd_duration_clean,,text,,Manually cleaned: `rbd_duration`,,,,,,,,,,,,,,,,
+rbd_duration_clean_years,rbd_duration_clean_years,,num,,Derived from: `anxiety_duration`- extract number and turn it to years,,,,,,,,,,,,,,,,
+rbd_before_diagnosis,rbd_before_diagnosis,If rbd happened before neurological diagnosis?,cat,"NA = HC / No rbd / Missing duration
+0 = Not before neurological diagnosis
+1 = Before neurological diagnosis",,,,,,,,,,,,,,,,,
+rbd_duration_before_diagnosis,rbd_duration_before_diagnosis,,num,,"Derived from: `rbd_duration_clean_years`, `disease_duration`",,,,,,,,,,,,,,,,
+fatigue_dir,"Fatigue, binary",,cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",,0,0,0,1,0,,1,1,,,,,,,,
+fatigue,Fatigue (MDS UPDRS 1.13),"Over the past week, have you usually felt fatigued? This feeling is not part of being sleepy or sad.  ",cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,,,,1,,,,,,,,,
+fatigue_dir_m,fatigue_dir_m,,cat,"0 = Normal
+1 = Slight / Mild
+2 = Moderate / Severe",,0,0,0,0,1,,,,,,,,,,,
+handwriting_dir,"Handwriting, binary",,cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",,0,0,0,1,0,,1,1,,,,,,,,
+handwriting,Handwriting (MDS UPDRS 2.07),"Over the past week, have people usually had trouble reading your handwriting?  ",cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,,,,1,,,,,,,,,
+handwriting_dir_m,handwriting_dir_m,,cat,"0 = Normal
+1 = Slight / Mild
+2 = Moderate / Severe",,0,0,0,0,1,,,,,,,,,,,
+slowness_dir,"Slowness, binary",,cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",,0,0,0,1,0,,1,1,,,,,,,,
+slowness,Slowness (MDS UPDRS II),"Over the past week, have you usually been slow or do you need help with daily activities, like:  For example, it takes you more time or you feel slower while eating, dressing, bathing, doing hobbies or other activities (i.e. getting out of bed, car, or a deep-seated chair), not related to feeling weak, stiff, or dizzy?  ",cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,,,,1,,,,,,,,,
+slowness_dir_m,slowness_dir_m,,cat,"0 = Normal
+1 = Slight / Mild
+2 = Moderate / Severe",,0,0,0,0,1,,,,,,,,,,,
+weight_dir_kg,Weight (kg),What is your current weight? ,num,,,,,,,,,,,1,1,,,,,,
+height_dir_cm,Height (cm),What is your height? ,num,,,,,,,,,,,1,1,,,,,,
+bmi_dir,Body mass index,,num,,,,,,,,,,,1,1,,,,,,
+exercise_moderate,exercise_moderate,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Moderate-intensity physical activity]",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+exercise_moderate_time,exercise_moderate_time,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Moderate-intensity physical activity][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_HIIT,exercise_HIIT,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Vigorous and/or very vigorous (HIIT) intensity physical activity]",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+exercise_HIIT_time,exercise_HIIT_time,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Vigorous and/or very vigorous (HIIT) intensity physical activity][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_muscle,exercise_muscle,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Muscle strengthening activities]",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+exercise_muscle_time,exercise_muscle_time,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Muscle strengthening activities][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_NA,exercise_NA,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Not applicable ]",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+exercise_NA_comment,exercise_NA_comment,"In the past week, how much time (in minutes) did you spend doing:  See examples of types of exercise above.  [Not applicable ][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_moderate_year,"Exercise: moderate, binary","Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Moderate-intensity physical activity]",cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+exercise_moderate_year_duration,exercise_moderate_year_duration,"Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Moderate-intensity physical activity][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_HIIT_year,"Exercise: HIIT, binary","Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Vigorous and/or very vigorous (HIIT) intensity physical activity]",cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+exercise_HIIT_year_duration,exercise_HIIT_year_duration,"Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Vigorous and/or very vigorous (HIIT) intensity physical activity][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_muscle_year,"Exercise: muscle, binary","Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Muscle strengthening activities]",cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+exercise_muscle_year_duration,exercise_muscle_year_duration,"Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Muscle strengthening activities][Comment]",text,,,,,,,,,,,,,,,,,,
+exercise_NA_year,exercise_NA_year,"Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Not applicable ]",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+exercise_NA_year_comment,exercise_NA_year_comment,"Have you done or been doing physical activity (at different intensity levels) regularly for more than a year? If ""Yes"", for how many years?  See examples of types of exercise below.  [Not applicable ][Comment]",text,,,,,,,,,,,,,,,,,,
+med_nsaid,Medication: nsaid,"Have you ever regularly taken any of the below medications, that is, at least two pills per week for 6 months or longer ",cat,"Ibuprofen-based non-aspirin medications
+Aspirin
+Other anti-inflammatory medications
+No answer",,,,,,,,1,,,,,,,,,
+med_ccb,Medication: ccb,"Have you ever been treated for high blood pressure, heart problems, angina, chest pain, stroke, irregular heartbeat, palpitations, recurrent headache, migraine or Raynaud's (sudden changes of colour  in your fingers, e.g. blueing, whitening and/or reddening) with below medications (calcium channel blocker)?   	Amlodipine or Norvasc 	Felodipine or Plendil 	Nifedipine or Procardia, Adalat, Afeditab, Nifediac, Nifedical 	Nicardipine or Cardene, Carden SR 	Isradipine or Dynacirc 	Nisoldipine or Sular 	Verapamil or Calan, Covera-HS, Isoptin, Verelan 	Diltiazem or Cardizem, Cartia, Dilacor, Tiazac, Dilt-CD, Diltia XT  ",cat,No / Yes / No answer,,,,,,,,1,,,,,,,,,
+med_beta,Medication: beta,"Have you ever been treated for irregular heart rhythm (arrhythmia), heart failure, chest pain (angina), heart attacks, migraine, certain types of tremors with below medications (beta blocker)?    	Acebutolol (Sectral) 	Atenolol (Tenormin) 	Bisoprolol (Zebeta) 	Metoprolol (Lopressor, Toprol XL) 	Nadolol (Corgard) 	Nebivolol (Bystolic) 	Propranolol (Inderal, InnoPran XL)  ",cat,"Acebutolol (Sectral)
+Atenolol (Tenormin)
+Bisoprolol (Zebeta)
+Metoprolol (Lopressor, Toprol XL)
+Nadolol (Corgard)
+Nebivolol (Bystolic)
+Propranolol (Inderal, InnoPran XL)
+No answer",,,,,,,,1,,,,,,,,,
+med_prostate,Medication: prostate,"Have you ever been treated for enlarged prostate, benign prostatic hyperplasia (BPH) with below medications?   	Terazosin (Hytrin) 	Doxazosin (Cardura) 	Alfuzosin (Uroxatral)  ",cat,"Terazosin (Hytrin)
+Doxazosin (Cardura)
+Alfuzosin (Uroxatral)
+Tamulosin
+No answer",,,,,,,,1,,,,,,,,,
+diabetes,Diabetes,Have you been diagnosed with diabetes? ,cat,No / Yes,,,,,,,,1,1,,,,,,,,
+med_diabetes,Medication: diabetes,Have you ever been treated for diabetes with below medications ,cat,"GLP-1
+DPP-4
+No answer",,,,,,,,1,,,,,,,,,
+disease_ibd,"Disease: ibd, binary",Have you been diagnosed with any of the diseases listed below?   [Irritable bowel syndrome (IBS)],cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+disease_crohn,"Disease: crohn, binary",Have you been diagnosed with any of the diseases listed below?   [Crohn’s disease (IBD)],cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+disease_rosacea,"Disease: rosacea, binary",Have you been diagnosed with any of the diseases listed below?   [Rosacea],cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+disease_ulcer,"Disease: ulcer, binary",Have you been diagnosed with any of the diseases listed below?   [Ulcerative colitis (IBD)],cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+disease_hepatitis,"Disease: hepatitis, binary","Have you been diagnosed with any of the diseases listed below?   [Hepatitis A, B, or C]",cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+disease_no,"Disease: none, binary",Have you been diagnosed with any of the diseases listed below?   [None of the above],cat,No / Yes / N/A,,,,,,,,1,1,,,,,,,,
+treatment_ibd,treatment_ibd,Have you received treatment for Irritable bowel disease (IBD)? ,cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+treatment_crohn,treatment_crohn,Have you received treatment for Crohn’s disease?,cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+treatment_rosacea,treatment_rosacea,Have you received treatment for Rosacea?,cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+treatment_ulcer,treatment_ulcer,Have you received treatment for Ulcerative colitis?,cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+treatment_hepatitis,treatment_hepatitis,"Have you received treatment for Hepatitis A, B, or C?",cat,No / Yes / N/A,,,,,,,,,,,,,,,,,
+PREDIGT_O,Original PREDIGT,,num,,,,,,,,,,,1,1,1,1,1,1,Original,Questionnaire only
+PREDIGT_S_B,"Simplified PREDIGT, binary",,num,,,,,,,,,,,,1,,,,,Updated,Questionnaire only
+PREDIGT_S_B_motor,"Simplified PREDIGT with motor, binary",,num,,,,,,,,,,,1,1,1,1,1,1,Updated,Questionnaire only
+PREDIGT_S_M,"Simplified PREDIGT, multi-level",,num,,,,,,,,,,,,1,,,,,Updated,Questionnaire only
+PREDIGT_S_M_motor,"Simplified PREDIGT with motor, multi-level",,num,,,,,,,,,,,,1,,,,,Updated,Questionnaire only
+UPSIT.01.M,UPSIT.01.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.02.M,UPSIT.02.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.03.M,UPSIT.03.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.04.M,UPSIT.04.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.05.M,UPSIT.05.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.06.M,UPSIT.06.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.07.M,UPSIT.07.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.08.M,UPSIT.08.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.09.M,UPSIT.09.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.10.M,UPSIT.10.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.11.M,UPSIT.11.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.12.M,UPSIT.12.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.13.M,UPSIT.13.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.14.M,UPSIT.14.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.15.M,UPSIT.15.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.16.M,UPSIT.16.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.17.M,UPSIT.17.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.18.M,UPSIT.18.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.19.M,UPSIT.19.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.20.M,UPSIT.20.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.21.M,UPSIT.21.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.22.M,UPSIT.22.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.23.M,UPSIT.23.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.24.M,UPSIT.24.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.25.M,UPSIT.25.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.26.M,UPSIT.26.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.27.M,UPSIT.27.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.28.M,UPSIT.28.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.29.M,UPSIT.29.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.30.M,UPSIT.30.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.31.M,UPSIT.31.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.32.M,UPSIT.32.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.33.M,UPSIT.33.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.34.M,UPSIT.34.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.35.M,UPSIT.35.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.36.M,UPSIT.36.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.37.M,UPSIT.37.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.38.M,UPSIT.38.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.39.M,UPSIT.39.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.40.M,UPSIT.40.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+UPSIT.01.B,UPSIT.01.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.02.B,UPSIT.02.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.03.B,UPSIT.03.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.04.B,UPSIT.04.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.05.B,UPSIT.05.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.06.B,UPSIT.06.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.07.B,UPSIT.07.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.08.B,UPSIT.08.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.09.B,UPSIT.09.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.10.B,UPSIT.10.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.11.B,UPSIT.11.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.12.B,UPSIT.12.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.13.B,UPSIT.13.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.14.B,UPSIT.14.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.15.B,UPSIT.15.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.16.B,UPSIT.16.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.17.B,UPSIT.17.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.18.B,UPSIT.18.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.19.B,UPSIT.19.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.20.B,UPSIT.20.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.21.B,UPSIT.21.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.22.B,UPSIT.22.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.23.B,UPSIT.23.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.24.B,UPSIT.24.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.25.B,UPSIT.25.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.26.B,UPSIT.26.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.27.B,UPSIT.27.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.28.B,UPSIT.28.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.29.B,UPSIT.29.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.30.B,UPSIT.30.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.31.B,UPSIT.31.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.32.B,UPSIT.32.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.33.B,UPSIT.33.B,,cat,0 / 1,Correct: 3,,,,,,,,,,,,,,,,
+UPSIT.34.B,UPSIT.34.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.35.B,UPSIT.35.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.36.B,UPSIT.36.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.37.B,UPSIT.37.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+UPSIT.38.B,UPSIT.38.B,,cat,0 / 1,Correct: 4,,,,,,,,,,,,,,,,
+UPSIT.39.B,UPSIT.39.B,,cat,0 / 1,Correct: 2,,,,,,,,,,,,,,,,
+UPSIT.40.B,UPSIT.40.B,,cat,0 / 1,Correct: 1,,,,,,,,,,,,,,,,
+olfaction,Olfaction category,,cat,Normal / Reduced,Reduced: UPSIT_percentile <= 15,,,,,,,1,1,,,,,,1,,
+UPSIT_scr,UPSIT score,,num,,,,,,,,,,,1,1,1,1,1,1,Original,Smell test only
+UPSIT_percentile,UPSIT percentile,,num,,,,,,,,,,,,1,,,,1,Original,Smell test only
+neuroscent1.M,neuroscent1.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent2.M,neuroscent2.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent3.M,neuroscent3.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent4.M,neuroscent4.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent5.M,neuroscent5.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent6.M,neuroscent6.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent7.M,neuroscent7.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent8.M,neuroscent8.M,,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,,,,,
+neuroscent1.B,neuroscent1.B,,cat,0 / 1,Corrected: 3,,,,,,,,,,,,,,,,
+neuroscent2.B,neuroscent2.B,,cat,0 / 1,Corrected: 1,,,,,,,,,,,,,,,,
+neuroscent3.B,neuroscent3.B,,cat,0 / 1,Corrected: 4,,,,,,,,,,,,,,,,
+neuroscent4.B,neuroscent4.B,,cat,0 / 1,Corrected: 1,,,,,,,,,,,,,,,,
+neuroscent5.B,neuroscent5.B,,cat,0 / 1,Corrected: 2,,,,,,,,,,,,,,,,
+neuroscent6.B,neuroscent6.B,,cat,0 / 1,Corrected: 4,,,,,,,,,,,,,,,,
+neuroscent7.B,neuroscent7.B,,cat,0 / 1,Corrected: 2,,,,,,,,,,,,,,,,
+neuroscent8.B,neuroscent8.B,,cat,0 / 1,Corrected: 3,,,,,,,,,,,,,,,,
+neuroscent_scr,NeuroScent score,,num,,,,,,,,,,,1,1,1,1,1,1,Updated,Smell test only
+neuroscent_scr_2,"NeuroScent score, one mint",,num,,,,,,,,,,,,1,,,,1,Updated,Smell test only
+PREDIGT_O_UPSIT,2-step: PREDIGT_O + UPSIT,,num,,,,,,,,,,,1,1,1,1,1,,Original,2-step combined
+PREDIGT_S_B_UPSIT,2-step: PREDIGT_S_B + UPSIT,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_B_motor_UPSIT,2-step: PREDIGT_S_B_motor + UPSIT,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_M_UPSIT,2-step: PREDIGT_S_M + UPSIT,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_M_motor_UPSIT,2-step: PREDIGT_S_M_motor + UPSIT,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_B_neuroscent,2-step: PREDIGT_S_B + NeuroScent,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_B_motor_neuroscent,2-step: PREDIGT_S_B_motor + NeuroScent,,num,,,,,,,,,,,1,1,1,1,1,,Updated,2-step combined
+PREDIGT_S_M_neuroscent,2-step: PREDIGT_S_M + NeuroScent,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_M_motor_neuroscent,2-step: PREDIGT_S_M_motor + NeuroScent,,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_B_neuroscent_2,"2-step: PREDIGT_S_B + NeuroScent, one mint",,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_B_motor_neuroscent_2,"2-step: PREDIGT_S_B_motor + NeuroScent, one mint",,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_M_neuroscent_2,"2-step: PREDIGT_S_M + NeuroScent, one mint",,num,,,,,,,,,,,,1,,,,,Updated,2-step combined
+PREDIGT_S_M_motor_neuroscent_2,"2-step: PREDIGT_S_M_motor + NeuroScent, one mint",,num,,,,,,,,,,,,1,,,,,Updated,2-step combined

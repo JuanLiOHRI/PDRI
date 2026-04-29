@@ -1,0 +1,563 @@
+---
+title: "MANU: tables"
+author: "Juan Li"
+date: 2025-06-03
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+library(dplyr)      # Data manipulation
+library(tidyr)      # Data manipulation
+library(ggplot2)    # Data visualization
+library(dabestr)    # Estimation plots
+library(pROC)       # ROC, AUC
+library(gtsummary)  # Summary table
+library(ggpubr)
+library(stringr)
+```
+
+## Read data
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+variables <- read.csv("Worksheets/curated_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+variable_details <- read.csv("Worksheets/curated_variable_details.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+
+data <- read.csv(paste0(dirname(getwd()), "/1. Curate the data/Curated data/Ottawa_trial_combine_curated_scores.csv"), 
+                 header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+data <- data[,variables$Short.name]
+```
+
+## make the categorical variables as factor and update the labels if applicable
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+flag_print <- F
+for (var in unique(variable_details$Short.name)) {
+  if (flag_print) {
+    print("-------------")
+    print(table(data[var], useNA = "ifany"))
+  }
+  label_vec <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(OptionLabel)))
+  label_vec <- label_vec[!is.na(label_vec)]
+  
+  label_vec_2 <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(ShortLabel)))
+  label_vec_2 <- label_vec_2[!is.na(label_vec_2)]
+  
+  if (!all(label_vec==label_vec_2)) # need to update labels
+  {
+    vec <- unlist(data[var])
+    for (i in seq_len(length(label_vec))){
+      vec[which(vec == label_vec[i])] <- label_vec_2[i]
+    }
+    data[var] <- vec
+  }
+  
+  # make it factor with proper levels
+  data[names(data)[which(names(data) == var)]] <- 
+    lapply(data[names(data)[which(names(data) == var)]], factor, levels = label_vec_2)
+  if (flag_print) {
+    print(table(data[var], useNA = "ifany"))
+    print(lapply(data[names(data)[which(names(data) == var)]], levels))
+  }
+}
+
+# drop levels since some options in the variable detail sheet were never chosen
+data <- data %>% droplevels()
+
+levels(data$group) <- c("HC", "PD", "OND")
+```
+
+```{r}
+# For the cohort who have complete PREDIGT 1.0 Questionnaire - original PREDIGT Score
+length(unique(data$ID))
+table(data$sex)
+round(prop.table(table(data$sex))*100, 2)
+min(data$age)
+max(data$age)
+table(data$group2)
+
+# For the cohort who have complete PREDIGT 1.0 Questionnaire + UPSIT
+df_UPSIT <- data %>% filter(!is.na(UPSIT_scr)) %>% droplevels()
+length(unique(df_UPSIT$ID))
+
+print("-----------------")
+# For the cohort who have complete PREDIGT 2.0 Questionnaire
+nrow(data %>% filter(!is.na(PREDIGT_S_B_motor)))
+
+# For the cohort who have complete NeuroScent
+nrow(data %>% filter(!is.na(neuroscent_scr)))
+
+# For the cohort who have complete PREDIGT 2.0 Questionnaire & NeuroScent
+nrow(data %>% filter(!is.na(PREDIGT_S_B_motor),!is.na(neuroscent_scr)))
+
+# For the cohort who have complete ALL components
+df_PREDIGT2 <- data %>% filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels()
+length(unique(df_PREDIGT2$ID))
+
+# Score range
+paste0("Score range of Original PREDIGT: ", min(data$PREDIGT_O, na.rm = T), " - ", max(data$PREDIGT_O, na.rm = T))
+paste0("Score range of Simplified PREDIGT: ", min(data$PREDIGT_S_B_motor, na.rm = T), " - ", max(data$PREDIGT_S_B_motor, na.rm = T))
+paste0("Score range of UPSIT: ", min(data$UPSIT_scr, na.rm = T), " - ", max(data$UPSIT_scr, na.rm = T))
+paste0("Score range of NeuroScent: ", min(data$neuroscent_scr, na.rm = T), " - ", max(data$neuroscent_scr, na.rm = T))
+paste0("Score range of Original PREDIGT + UPSIT: ", round(min(data$PREDIGT_O_UPSIT, na.rm = T),2), " - ", round(max(data$PREDIGT_O_UPSIT, na.rm = T),2))
+paste0("Score range of Simplified PREDIGT + NeuroScent: ", round(min(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2), " - ", round(max(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2))
+```
+
+```{r}
+table(data %>% filter(group == "HC") %>% select(depression1, depression2))
+table(data %>% filter(group == "HC") %>% select(depression1_b, depression2_b))
+table(data %>% filter(group == "HC") %>% select(depression_dir))
+
+table(data %>% filter(group == "PD") %>% select(depression1, depression2))
+table(data %>% filter(group == "PD") %>% select(depression1_b, depression2_b))
+table(data %>% filter(group == "PD") %>% select(depression_dir))
+```
+
+## Table 1: summary of the cohort
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete PREDIGT 1.0 Questionnaire - original PREDIGT Score
+df <- data
+table(df$diagnosis, useNA = "ifany")
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: PREDIGT1.0 Questionnaire") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete UPSIT
+df <- data %>% filter(!is.na(UPSIT_scr))
+table(df$diagnosis, useNA = "ifany")
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: UPSIT") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete ALL components
+df <- df_PREDIGT2
+table(df$diagnosis, useNA = "ifany")
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: all components") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+```
+
+## Table 2: Categorical variables: PREDIGT1.0
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+var_vec <- variables$Short.name[which(variables$Cat_summary == 1)]
+name_vec <- variables$Long.name[which(variables$Cat_summary == 1)]
+
+# PREDIGT1.0
+df <- data
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 2. Categorical vaiables in Ottawa Trial: PREDIGT1.0") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+
+# Female
+df <- data %>% filter(sex == "Female") %>% droplevels()
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec[c(1:41)]))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 2. Categorical vaiables in Ottawa Trial: Female") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+
+# Male
+df <- data %>% filter(sex == "Male") %>% droplevels()
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec[c(1:41)]))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 2. Categorical vaiables in Ottawa Trial: Male") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# OR
+var_vec <- variables$Short.name[which(variables$OR == 1)]
+
+# PREDIGT1.0
+df <- data
+df1 <- df %>% filter(group %in% c("HC", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "HC", 0, 1))                         # PD vs HC 
+df2 <- df %>% filter(group %in% c("OND", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "OND", 0, 1))                        # PD vs OND
+df3 <- df %>% 
+  mutate(group_num = ifelse(group == "PD", 1, 0))                     # PD vs Other (HC + OND)
+
+res <- data.frame(variable = var_vec)
+res$nHC   <- rep(NA, nrow(res))
+res$nHC_1 <- rep(NA, nrow(res))
+res$nHC_p <- rep(NA, nrow(res))
+res$nPD   <- rep(NA, nrow(res))
+res$nPD_1 <- rep(NA, nrow(res))
+res$nPD_p <- rep(NA, nrow(res))
+res$nOND   <- rep(NA, nrow(res))
+res$nOND_1 <- rep(NA, nrow(res))
+res$nOND_p <- rep(NA, nrow(res))
+res$or_1    <- rep(NA, nrow(res))
+res$or_2    <- rep(NA, nrow(res))
+res$or_3    <- rep(NA, nrow(res))
+
+check <- F
+for (i in 1:length(var_vec)) {
+  dfi <- df %>% select(group, all_of(var_vec[i]))
+  names(dfi)[2] <- "var"
+  tab1 <- table(dfi$group)
+  tab2 <- table(dfi)
+  if (check) print(tab2)
+  
+  res$nHC[i] <- tab1[1]
+  res$nHC_1[i] <- tab2[1,2]
+  res$nHC_p[i] <- paste0(res$nHC_1[i], " (", round(res$nHC_1[i]/res$nHC[i]*100, 1), "%)")
+  
+  res$nPD[i] <- tab1[2]
+  res$nPD_1[i] <- tab2[2,2]
+  res$nPD_p[i] <- paste0(res$nPD_1[i], " (", round(res$nPD_1[i]/res$nPD[i]*100, 1), "%)")
+  
+  res$nOND[i] <- tab1[3]
+  res$nOND_1[i] <- tab2[3,2]
+  res$nOND_p[i] <- paste0(res$nOND_1[i], " (", round(res$nOND_1[i]/res$nOND[i]*100, 1), "%)")
+  
+  if (res$nPD_1[i] > 0) {
+    f <- as.formula(paste0("group_num ~ age + sex + ", var_vec[i]))
+    if (res$nHC_1[i] > 0) {
+      m1 <- glm(f, df1, family = binomial)
+      res$or_1[i] <- paste0(round(exp(coef(m1)[4]), 2), " (", round(exp(confint(m1)[4,1]),2), "-", round(exp(confint(m1)[4,2]),2), ")")
+    }
+    if (res$nOND_1[i] > 0) {
+      m1 <- glm(f, df2, family = binomial)
+      res$or_2[i] <- paste0(round(exp(coef(m1)[4]), 2), " (", round(exp(confint(m1)[4,1]),2), "-", round(exp(confint(m1)[4,2]),2), ")")
+    }
+    m1 <- glm(f, df3, family = binomial)
+    res$or_3[i] <- paste0(round(exp(coef(m1)[4]), 2), " (", round(exp(confint(m1)[4,1]),2), "-", round(exp(confint(m1)[4,2]),2), ")")
+  }
+}
+res_or <- res
+res_or[, c("variable", "nHC_p", "nPD_p", "nOND_p", "or_1", "or_2", "or_3")]
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Female
+var_vec <- variables$Short.name[which(variables$OR == 1)]
+
+df <- data %>% filter(sex == "Female") %>% droplevels()
+df1 <- df %>% filter(group %in% c("HC", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "HC", 0, 1))                         # PD vs HC 
+df2 <- df %>% filter(group %in% c("OND", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "OND", 0, 1))                        # PD vs OND
+df3 <- df %>% 
+  mutate(group_num = ifelse(group == "PD", 1, 0))                     # PD vs Other (HC + OND)
+
+res <- data.frame(variable = var_vec)
+res$nHC   <- rep(NA, nrow(res))
+res$nHC_1 <- rep(NA, nrow(res))
+res$nHC_p <- rep(NA, nrow(res))
+res$nPD   <- rep(NA, nrow(res))
+res$nPD_1 <- rep(NA, nrow(res))
+res$nPD_p <- rep(NA, nrow(res))
+res$nOND   <- rep(NA, nrow(res))
+res$nOND_1 <- rep(NA, nrow(res))
+res$nOND_p <- rep(NA, nrow(res))
+res$or_1    <- rep(NA, nrow(res))
+res$or_2    <- rep(NA, nrow(res))
+res$or_3    <- rep(NA, nrow(res))
+
+check <- F
+for (i in 1:length(var_vec)) {
+  dfi <- df %>% select(group, all_of(var_vec[i]))
+  names(dfi)[2] <- "var"
+  tab1 <- table(dfi$group)
+  tab2 <- table(dfi)
+  if (check) print(tab2)
+  
+  res$nHC[i] <- tab1[1]
+  res$nHC_1[i] <- tab2[1,2]
+  res$nHC_p[i] <- paste0(res$nHC_1[i], " (", round(res$nHC_1[i]/res$nHC[i]*100, 1), "%)")
+  
+  res$nPD[i] <- tab1[2]
+  res$nPD_1[i] <- tab2[2,2]
+  res$nPD_p[i] <- paste0(res$nPD_1[i], " (", round(res$nPD_1[i]/res$nPD[i]*100, 1), "%)")
+  
+  res$nOND[i] <- tab1[3]
+  res$nOND_1[i] <- tab2[3,2]
+  res$nOND_p[i] <- paste0(res$nOND_1[i], " (", round(res$nOND_1[i]/res$nOND[i]*100, 1), "%)")
+  
+  if (res$nPD_1[i] > 0) {
+    f <- as.formula(paste0("group_num ~ age + ", var_vec[i]))
+    if (res$nHC_1[i] > 0) {
+      m1 <- glm(f, df1, family = binomial)
+      res$or_1[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+    }
+    if (res$nOND_1[i] > 0) {
+      m1 <- glm(f, df2, family = binomial)
+      res$or_2[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+    }
+    m1 <- glm(f, df3, family = binomial)
+    res$or_3[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+  }
+}
+res_or_F <- res
+res_or_F[, c("variable", "nHC_p", "nPD_p", "nOND_p", "or_1", "or_2", "or_3")]
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Male
+var_vec <- variables$Short.name[which(variables$OR == 1)]
+
+df <- data %>% filter(sex == "Male") %>% droplevels()
+df1 <- df %>% filter(group %in% c("HC", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "HC", 0, 1))                         # PD vs HC 
+df2 <- df %>% filter(group %in% c("OND", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "OND", 0, 1))                        # PD vs OND
+df3 <- df %>% 
+  mutate(group_num = ifelse(group == "PD", 1, 0))                     # PD vs Other (HC + OND)
+
+res <- data.frame(variable = var_vec)
+res$nHC   <- rep(NA, nrow(res))
+res$nHC_1 <- rep(NA, nrow(res))
+res$nHC_p <- rep(NA, nrow(res))
+res$nPD   <- rep(NA, nrow(res))
+res$nPD_1 <- rep(NA, nrow(res))
+res$nPD_p <- rep(NA, nrow(res))
+res$nOND   <- rep(NA, nrow(res))
+res$nOND_1 <- rep(NA, nrow(res))
+res$nOND_p <- rep(NA, nrow(res))
+res$or_1    <- rep(NA, nrow(res))
+res$or_2    <- rep(NA, nrow(res))
+res$or_3    <- rep(NA, nrow(res))
+
+check <- F
+for (i in 1:length(var_vec)) {
+  dfi <- df %>% select(group, all_of(var_vec[i]))
+  names(dfi)[2] <- "var"
+  tab1 <- table(dfi$group)
+  tab2 <- table(dfi)
+  if (check) print(tab2)
+  
+  res$nHC[i] <- tab1[1]
+  res$nHC_1[i] <- tab2[1,2]
+  res$nHC_p[i] <- paste0(res$nHC_1[i], " (", round(res$nHC_1[i]/res$nHC[i]*100, 1), "%)")
+  
+  res$nPD[i] <- tab1[2]
+  res$nPD_1[i] <- tab2[2,2]
+  res$nPD_p[i] <- paste0(res$nPD_1[i], " (", round(res$nPD_1[i]/res$nPD[i]*100, 1), "%)")
+  
+  res$nOND[i] <- tab1[3]
+  res$nOND_1[i] <- tab2[3,2]
+  res$nOND_p[i] <- paste0(res$nOND_1[i], " (", round(res$nOND_1[i]/res$nOND[i]*100, 1), "%)")
+  
+  if (res$nPD_1[i] > 0) {
+    f <- as.formula(paste0("group_num ~ age + ", var_vec[i]))
+    if (res$nHC_1[i] > 0) {
+      m1 <- glm(f, df1, family = binomial)
+      res$or_1[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+    }
+    if (res$nOND_1[i] > 0) {
+      m1 <- glm(f, df2, family = binomial)
+      res$or_2[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+    }
+    m1 <- glm(f, df3, family = binomial)
+    res$or_3[i] <- paste0(round(exp(coef(m1)[3]), 2), " (", round(exp(confint(m1)[3,1]),2), "-", round(exp(confint(m1)[3,2]),2), ")")
+  }
+}
+res_or_M <- res
+res_or_M[, c("variable", "nHC_p", "nPD_p", "nOND_p", "or_1", "or_2", "or_3")]
+```
+
+## Additional info for Supplementary Table 1: Continuous variables
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# PREDIGT1.0
+df <- data
+var_vec <- variables$Short.name[which(variables$Con_summary_table == 1)]
+name_vec <- variables$Long.name[which(variables$Con_summary_table == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2, sex, all_of(var_vec))
+names(df_O_tbl1)[c(4:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-c(group2, sex)) %>% 
+  tbl_summary(by = group,
+              missing = "no",
+              type = list("NeuroScent score" ~ "continuous")) %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 3. Continuous variables in Ottawa Trial: PREDIGT1.0 Questionnaire") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# PREDIGT1.0
+df <- data
+var_vec <- variables$Short.name[which(variables$Con_summary_table == 1)]
+name_vec <- variables$Long.name[which(variables$Con_summary_table == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2, sex, all_of(var_vec))
+names(df_O_tbl1)[c(4:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-c(group, sex)) %>% 
+  tbl_summary(by = group2,
+              missing = "no",
+              type = list("NeuroScent score" ~ "continuous")) %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 3. Continuous variables in Ottawa Trial: PREDIGT1.0 Questionnaire") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+var_vec <- variables$Short.name[which(variables$Cat_summary == 1)]
+name_vec <- variables$Long.name[which(variables$Cat_summary == 1)]
+
+# PREDIGT1.0
+ind <- seq_len(length(var_vec))
+df <- data
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec[ind]))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec[ind]
+
+df_O_tbl1 %>% select(-group) %>% 
+  tbl_summary(by = group2,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 2. Categorical vaiables in Ottawa Trial: PREDIGT1.0") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+```
+
+```{r}
+
+```
