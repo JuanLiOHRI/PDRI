@@ -1,5 +1,5 @@
 ---
-title: "Calculate versions of questionniare scores, smell test scores, and PD-RISK Indices (Github ver, open data)"
+title: "Calculate versions of questionniare scores, smell test scores, and PD-RISK Indices (Github ver, full data)"
 author: "Juan Li"
 date: "2026-10-15"
 output:  
@@ -14,19 +14,197 @@ output:
 ```{r}
 library(dplyr)
 library(tidyr)
+source("R/PREDIGTScr.R", echo=FALSE)
 ```
 
 # Read data
 
 ```{r}
 # data file
-data <- read.csv("Data/PDRI_curated_open.csv", header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+data <- read.csv("Data/PDRI_curated_full.csv", header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
 
 # variable sheet for data manipulation and selection
 variables <- read.csv("Worksheets/PDRI_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
 ```
 
-# The calculated PREDIGT score have been included in "Data/PDRI_curated_open.csv"
+# PREDIGT score
+
+```{r}
+FG  <- TRUE # including factor G?
+FT  <- TRUE # including factor T?
+
+# PPV and NPV
+prevalence <- 1/100 # prevalence
+plotPPV <- TRUE
+
+# compare AUC in Female vs Male
+sex_ind <- 0 # 0: Both; 1: Female; 2: Male
+```
+
+
+```{r}
+scrCalc <- function(data, varStr2, coefV, vFH, newVar, print = FALSE,
+                    varStr_motor = NULL, coefV_motor = c(0.25, 1, 1)) {
+  
+  if (print) {
+    for (i in 1:length(varStr2)) {
+      print(table(data %>% select(all_of(varStr2[i])), useNA = "ifany"))
+    }
+  }
+  # w/o motor
+  varStr1 <- c(c("ID", "group", "sex","age"), varStr2)
+  
+  ind_question <- NULL # Only in self-report
+  ind_D <- which(varStr2 == vFH)
+  ind_E <- c(1:(ind_D-1))
+  ind_I <- c((ind_D+1):length(varStr2))
+  
+  data$new <- PREDIGTScr(data, varStr1, varStr2, coefV, ind_question, unique(data$EVENT_ID), FG, FT, ind_E, 
+                         ind_D, ind_I, method = 1)$data$score
+  names(data)[which(names(data) == "new")] <- newVar
+  
+  # with motor
+  if (!is.null(varStr_motor)){
+    if (print) {
+      for (i in 1:length(varStr_motor)) {
+        print(table(data %>% select(all_of(varStr_motor[i])), useNA = "ifany"))
+      }
+    }
+    varStr2 <- c(varStr2, varStr_motor)
+    coefV <- c(coefV, coefV_motor)
+    
+    varStr1 <- c(c("ID", "group", "sex","age"), varStr2)
+    
+    ind_question <- NULL # Only in self-report
+    ind_D <- which(varStr2 == vFH)
+    ind_E <- c(1:(ind_D-1))
+    ind_I <- c((ind_D+1):length(varStr2))
+    
+    data$new <- PREDIGTScr(data, varStr1, varStr2, coefV, ind_question, unique(data$EVENT_ID), FG, FT, ind_E, 
+                           ind_D, ind_I, method = 1)$data$score
+    names(data)[which(names(data) == "new")] <- paste0(newVar, "_motor")
+  }
+  
+  return(data)
+}
+```
+
+## Original
+
+```{r}
+varStr2 <- variables$Short.name[which(variables$Original == 1)]
+
+# Coeffcients
+coefV <- c(0.5,     # 1:  Metal
+           0.25,    # 2:  Pesiticide
+           0.25,    # 3:  Farm
+           0.5,     # 4:  head trauma
+           0.5,     # 5:  constipation
+           0.5,     # 6:  olfaction
+           -0.0625, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+           -0.125,  # 8:  caffeine: >=1*1, >=2*2
+           0.125,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+           0.25,    # 10: depression
+           0.25,    # 11: anxiety
+           0.25     # 12: RBD
+)
+
+data <- scrCalc(data, varStr2, coefV, vFH = "family_history_dir", newVar = "PREDIGT_O", TRUE,
+                NULL)
+
+# Estimated score range, see notes in Table 3
+df_range <- data[1:2,] %>% select(-PREDIGT_O)
+# min: 40 yrs female who responded negative to all the risk factors
+df_range[1, which(names(data) %in% varStr2)] <- c(0,     # 1:  Metal
+                                                  0,    # 2:  Pesiticide
+                                                  0,    # 3:  Farm
+                                                  0,     # 4:  head trauma
+                                                  0,     # 5:  constipation
+                                                  0,     # 6:  olfaction
+                                                  12, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+                                                  2,  # 8:  caffeine: >=1*1, >=2*2
+                                                  0,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  0,    # 10: depression
+                                                  0,    # 11: anxiety
+                                                  0)     # 12: RBD
+df_range[1, "sex"] <- "Female"
+df_range[1, "age"] <- 40
+
+# max: 100 yrs male who responded positive to all the risk factors
+df_range[2, which(names(df_range) %in% varStr2)] <- c(1,     # 1:  Metal
+                                                  1,    # 2:  Pesiticide
+                                                  1,    # 3:  Farm
+                                                  2,     # 4:  head trauma
+                                                  1,     # 5:  constipation
+                                                  1,     # 6:  olfaction
+                                                  0, # 7:  smoking: any<10y*1, Ex11-19*2, Ex20*4, Current11-19*8, Current20*12
+                                                  0,  # 8:  caffeine: >=1*1, >=2*2
+                                                  4,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  1,    # 10: depression
+                                                  1,    # 11: anxiety
+                                                  1)     # 12: RBD
+df_range[2, "sex"] <- "Male"
+df_range[2, "age"] <- 100
+df_range <- scrCalc(df_range, varStr2, coefV, vFH = "family_history_dir", newVar = "PREDIGT_O", FALSE,
+                NULL)
+df_range$PREDIGT_O
+```
+
+## Simplified
+
+```{r}
+varStr2 <- variables$Short.name[which(variables$Simple_b == 1)]
+
+# Coeffcients
+coefV <- c(0.5,     # 1:  constipation
+           0.5,     # 2:  olfaction
+           0.5,     # 3:  family history
+           0.25,    # 4: depression
+           0.25,    # 5: anxiety
+           0.25     # 6: RBD
+)
+
+# add motor
+varStr_motor <- variables$Short.name[which(variables$Motor_b == 1)]
+coefV_motor <- c(0.25,    # 7: fatigue
+                 1,       # 8: handwriting
+                 1        # 9: slowness
+)  
+
+data <- scrCalc(data, varStr2, coefV, vFH = "family_history_dir_b", newVar = "PREDIGT_S_B", TRUE,
+                varStr_motor, coefV_motor)
+
+# Estimated score range, see notes in Table 3
+df_range <- data[1:2,] %>% select(-c(PREDIGT_S_B, PREDIGT_S_B_motor))
+# min: 40 yrs female who responded negative to all the risk factors
+df_range[1, which(names(df_range) %in% varStr2)] <- c(0,     # 5:  constipation
+                                                  0,     # 6:  olfaction
+                                                  0,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  0,    # 10: depression
+                                                  0,    # 11: anxiety
+                                                  0)     # 12: RBD
+df_range[1, which(names(df_range) %in% varStr_motor)] <- c(0,     # 7: fatigue
+                                                  0,     # 8: handwriting
+                                                  0)     # 9: slowness
+df_range[1, "sex"] <- "Female"
+df_range[1, "age"] <- 40
+
+# max: 100 yrs male who responded positive to all the risk factors
+df_range[2, which(names(df_range) %in% varStr2)] <- c(1,     # 5:  constipation
+                                                  1,     # 6:  olfaction
+                                                  1,   # 9:  family history: 3rd*1, 2nd*2, 1st*4
+                                                  1,    # 10: depression
+                                                  1,    # 11: anxiety
+                                                  1)     # 12: RBD
+df_range[2, which(names(df_range) %in% varStr_motor)] <- c(1,     # 7: fatigue
+                                                  1,     # 8: handwriting
+                                                  1)     # 9: slowness
+df_range[2, "sex"] <- "Male"
+df_range[2, "age"] <- 100
+df_range <- scrCalc(df_range, varStr2, coefV, vFH = "family_history_dir_b", newVar = "PREDIGT_S_B", FALSE,
+                varStr_motor, coefV_motor)
+df_range$PREDIGT_S_B_motor
+```
 
 # Smell tests
 
@@ -64,18 +242,31 @@ upsit_norm_long$age_cat <- factor(upsit_norm_long$age_cat, levels = c("X35.39", 
 levels(upsit_norm_long$age_cat) <- c("35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "over85")
 upsit_norm_long$ref <- paste(upsit_norm_long$sex, upsit_norm_long$age_cat, upsit_norm_long$UPSIT, sep = "_")
 
-upsit_percentile <- UPSIT %>% select(ID, UPSIT_scr) %>% left_join(data %>% select(ID, sex, age_cat), by = "ID")
+upsit_percentile <- UPSIT %>% select(ID, UPSIT_scr) %>% left_join(data %>% select(ID, sex, age), by = "ID")
+upsit_percentile <- upsit_percentile %>% mutate(age_cat = ifelse(is.na(age), NA, case_when(
+  age < 40 ~ "35-39",
+  age < 45 ~ "40-44",
+  age < 50 ~ "45-49",
+  age < 55 ~ "50-54",
+  age < 60 ~ "55-59",
+  age < 65 ~ "60-64",
+  age < 70 ~ "65-69",
+  age < 75 ~ "70-74",
+  age < 80 ~ "75-79",
+  age < 85 ~ "80-84",
+  TRUE ~ "over85"
+)))
 upsit_percentile$ref <- paste(upsit_percentile$sex, upsit_percentile$age_cat, upsit_percentile$UPSIT_scr, sep = "_")
 
 upsit_percentile <- upsit_percentile %>% left_join(upsit_norm_long %>% select(ref, UPSIT_percentile), by = "ref")
 
-UPSIT <- UPSIT %>% left_join(upsit_percentile %>% select(ID, UPSIT_percentile), by = "ID")
+UPSIT <- UPSIT %>% left_join(upsit_percentile %>% select(ID, UPSIT_percentile, age_cat), by = "ID")
 UPSIT <- UPSIT %>% 
   mutate(olfaction =ifelse(is.na(UPSIT_percentile), NA,
                            ifelse(UPSIT_percentile <= 15, "Reduced", "Normal"))) # DOI: 10.1002/mds.24892
 
 # Save results
-data <- data %>% left_join(UPSIT %>% select(ID, UPSIT_scr, UPSIT_percentile, olfaction), by = "ID")
+data <- data %>% left_join(UPSIT %>% select(ID, UPSIT_scr, UPSIT_percentile, age_cat, olfaction), by = "ID")
 ```
 
 # NeuroScent
