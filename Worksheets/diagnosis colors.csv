@@ -1,0 +1,38 @@
+diagnosis,color
+HC,#1F78B4
+PD,#AF026C
+PD/DLB,#AF026C
+Other,#33A02C
+OND,#33A02C
+MSA/PSP,#33A02C
+MCI/DEM,orangered
+AON,purple
+DLB,violet
+MSA,#B2DF8A
+PSP,#33A02C
+AD,brown
+Dementia,orangered
+MCI,orange
+CBS,grey30
+Cerebral Palsy,grey33
+Drug induced parkinsonism,grey36
+Dystonia,grey39
+Epilepsy,grey42
+ET,grey45
+Functional MD,grey48
+MDD,grey51
+MELAS syndrome,grey54
+Multiple Sclerosis,grey57
+Neuralgia,grey60
+NPH,grey63
+RLS,grey66
+Tic,grey69
+Tremor,grey72
+Vascular Parkinsonism,grey75
+ND,#AF026C
+Non-ND,purple
+Mixed,grey30
+PD/DLB/PAF/RBD,#AF026C
+PAF,magenta
+RBD,gray70
+SCA,purple

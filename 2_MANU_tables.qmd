@@ -1,0 +1,411 @@
+---
+title: "MANU: tables (Github ver, open data)"
+author: "Juan Li"
+date: 2026-10-15
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+library(dplyr)      # Data manipulation
+library(tidyr)      # Data manipulation
+library(ggplot2)    # Data visualization
+library(dabestr)    # Estimation plots
+library(pROC)       # ROC, AUC
+library(gtsummary)  # Summary table
+library(ggpubr)
+library(stringr)
+```
+
+# Read data
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| output: false
+
+variables <- read.csv("Worksheets/PDRI_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+variable_details <- read.csv("Worksheets/PDRI_variable_details.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+
+data <- read.csv("Data/Code generated/PDRI_curated_scores.csv", 
+                 header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+```
+
+# make the categorical variables as factor and update the labels if applicable
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+flag_print <- F
+vec1 <- unique(variable_details$Short.name)
+vec2 <- names(data)
+for (var in intersect(vec1, vec2)) {
+  if (flag_print) {
+    print("-------------")
+    print(table(data[var], useNA = "ifany"))
+  }
+  label_vec <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(OptionLabel)))
+  label_vec <- label_vec[!is.na(label_vec)]
+  
+  label_vec_2 <- as.vector(unlist(variable_details %>% filter(Short.name==var) %>% select(ShortLabel)))
+  label_vec_2 <- label_vec_2[!is.na(label_vec_2)]
+  
+  if (!all(label_vec==label_vec_2)) # need to update labels
+  {
+    vec <- unlist(data[var])
+    for (i in seq_len(length(label_vec))){
+      vec[which(vec == label_vec[i])] <- label_vec_2[i]
+    }
+    data[var] <- vec
+  }
+  
+  # make it factor with proper levels
+  data[names(data)[which(names(data) == var)]] <- 
+    lapply(data[names(data)[which(names(data) == var)]], factor, levels = label_vec_2)
+  if (flag_print) {
+    print(table(data[var], useNA = "ifany"))
+    print(lapply(data[names(data)[which(names(data) == var)]], levels))
+  }
+}
+
+# drop levels since some options in the variable detail sheet were never chosen
+data <- data %>% droplevels()
+
+levels(data$group) <- c("HC", "PD", "OND")
+```
+
+# Table 1: summary of the cohort
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete PREDIGT 1.0 Questionnaire - original PREDIGT Score
+df <- data
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: PREDIGT1.0 Questionnaire") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete UPSIT
+df <- data %>% filter(!is.na(UPSIT_scr))
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: UPSIT") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+# %>% as_flex_table() 
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# For the cohort who have complete ALL components
+df_PREDIGT2 <- data %>% filter(!is.na(UPSIT_scr), !is.na(PREDIGT_S_B_motor), !is.na(neuroscent_scr)) %>% droplevels()
+
+df <- df_PREDIGT2
+
+var_vec <- variables$Short.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+name_vec <- variables$Long.name[which(variables$Table1 == 1 & variables$Open.data == 1)]
+
+df_O_tbl1 <- df %>%
+  select(group, group2,all_of(var_vec))
+names(df_O_tbl1)[c(3:ncol(df_O_tbl1))] <- name_vec
+
+df_O_tbl1 %>% select(-group2) %>% 
+  tbl_summary(by = group,
+              missing = "no") %>%
+  add_p() %>%
+  add_q() %>%
+  modify_header(label = "**Variable**") %>% # update the column header
+  modify_caption("Table 1. Patient Characteristics in Ottawa Trial: all components") %>%
+  bold_labels() %>% 
+  bold_p(t = 0.05) 
+```
+
+# Score performances comparison and thresholds
+
+This section generates Tables 3, 4, and Supplementary Tables 3, 5, 6, 7.
+
+## Actual score range within the Ottawa cohort
+
+```{r}
+paste0("Score range of Original PREDIGT: ", min(data$PREDIGT_O, na.rm = T), " - ", max(data$PREDIGT_O, na.rm = T))
+paste0("Score range of Simplified PREDIGT: ", min(data$PREDIGT_S_B_motor, na.rm = T), " - ", max(data$PREDIGT_S_B_motor, na.rm = T))
+paste0("Score range of UPSIT: ", min(data$UPSIT_scr, na.rm = T), " - ", max(data$UPSIT_scr, na.rm = T))
+paste0("Score range of NeuroScent: ", min(data$neuroscent_scr, na.rm = T), " - ", max(data$neuroscent_scr, na.rm = T))
+paste0("Score range of Original PREDIGT + UPSIT: ", round(min(data$PREDIGT_O_UPSIT, na.rm = T),2), " - ", round(max(data$PREDIGT_O_UPSIT, na.rm = T),2))
+paste0("Score range of Simplified PREDIGT + NeuroScent: ", round(min(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2), " - ", round(max(data$PREDIGT_S_B_motor_neuroscent, na.rm = T),2))
+```
+
+## Score median (interquartile range)
+
+1.  **Table 3**: in subjects that completed all assessments in phases I and II, for head-to-head comparison
+2.  **Supplementary Table 3**: using all available scores
+3.  **Supplementary Table 5**: in subjects that completed all assessments in phases I and II, separated by sex
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+source("R/util.R", echo = FALSE)
+
+# --------- median (IQR) ---------
+var_vec <- variables$Short.name[which(variables$ROC == 1)]
+name_vec <- variables$Long.name[which(variables$ROC == 1)]
+
+for (i_cohort in 1:2) {
+  if (i_cohort == 1)
+    # PREDIGT1 cohort
+  {
+    df_roc_temp <- data
+  } else
+    # all_component
+  {
+    df_roc_temp <- df_PREDIGT2
+  }
+  
+  df_O_tbl1 <- df_roc_temp %>%
+    select(group, group2, sex, all_of(var_vec))
+  names(df_O_tbl1)[c(4:ncol(df_O_tbl1))] <- name_vec
+  
+  # all
+  print(df_O_tbl1 %>% select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("All") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+  
+  # Female
+  print(df_O_tbl1 %>% filter(sex == "Female") %>% droplevels() %>%
+    select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("Female") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+  
+  # Male
+  print(df_O_tbl1 %>% filter(sex == "Male") %>% droplevels() %>%
+    select(-c(group2, sex)) %>%
+    tbl_summary(
+      by = group,
+      missing = "no",
+      type = list("NeuroScent score" ~ "continuous")
+    ) %>%
+    add_p() %>%
+    add_q() %>%
+    modify_header(label = "**Variable**") %>% # update the column header
+    modify_caption("Male") %>%
+    bold_labels() %>%
+    bold_p(t = 0.05))
+}
+```
+
+## AUC (95% confidence interval)
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# --------- ROC/AUC ---------
+
+test_vec <- variables$Short.name[which(variables$ROC == 1)]
+test_vec2 <- variables$Long.name[which(variables$ROC == 1)]
+type1_vec <- variables$Type1[which(variables$ROC == 1)]
+type2_vec <- variables$Type2[which(variables$ROC == 1)]
+group_name <- levels(data$group)
+directions <- c("<", "<", ">", ">", "<", "<")
+
+resList <- list()
+for (i_cohort in 1:2) {
+  if (i_cohort == 1)
+    # PREDIGT1 cohort
+  {
+    df_roc_temp <- data
+  } else
+    # all_component
+  {
+    df_roc_temp <- df_PREDIGT2
+  }
+  
+  df <- df_roc_temp %>%
+    mutate(group3 = ifelse(group == "PD", "PD", "HC+OND"))
+  levels(df$group3) <- c("HC+OND", "PD")
+  table(df %>% select(group, group3))
+  compareList <- list(c("HC", "PD"), c("OND", "PD"), c("HC+OND", "PD"))
+  
+  dfPlt <- data.frame()
+  res <- data.frame()
+  for (i in seq_len(length(test_vec))) {
+    df_i <- df %>% select(group, group3, sex, all_of(test_vec[i]))
+    names(df_i)[ncol(df_i)] <- "value"
+    
+    for (i_group in 1:3) {
+      # ------- All -------
+      if (i_group < 3) {
+        df_temp <- df_i %>% select(group, value, sex)
+      } else {
+        df_temp <- df_i %>% select(group3, value, sex)
+        names(df_temp)[names(df_temp) == "group3"] <- "group"
+      }
+      
+      result_A <- ROC_summary(df_temp,
+                              compareList[[i_group]],
+                              test_vec2[i],
+                              type1_vec[i],
+                              type2_vec[i],
+                              direction = directions[i])
+      dfPlt <- bind_rows(dfPlt, result_A$dfPlt)
+      res <- bind_rows(res, result_A$res)
+      
+      #  ------- Female -------
+      df_temp_F <- df_temp %>% filter(sex == "Female") %>% droplevels()
+      
+      result_F <- ROC_summary(
+        df_temp_F,
+        compareList[[i_group]],
+        test_vec2[i],
+        type1_vec[i],
+        type2_vec[i],
+        sex = "Female",
+        cut_all = result_A$cut_all,
+        direction = directions[i]
+      )
+      dfPlt <- bind_rows(dfPlt, result_F$dfPlt)
+      res <- bind_rows(res, result_F$res)
+      
+      #  ------- Male -------
+      df_temp_M <- df_temp %>% filter(sex == "Male") %>% droplevels()
+      
+      result_M <- ROC_summary(
+        df_temp_M,
+        compareList[[i_group]],
+        test_vec2[i],
+        type1_vec[i],
+        type2_vec[i],
+        sex = "Male",
+        cut_all = result_A$cut_all,
+        direction = directions[i]
+      )
+      dfPlt <- bind_rows(dfPlt, result_M$dfPlt)
+      res <- bind_rows(res, result_M$res)
+    }
+  }
+  # save result
+  resList[[i_cohort]] <- res
+}
+
+res_PREDIGT1 <- resList[[1]]
+res_PREDIGT1$group <- factor(res_PREDIGT1$group, levels = c("PD vs HC", "PD vs OND", "PD vs HC+OND"))
+
+res_all_component <- resList[[2]]
+res_all_component$group <- factor(res_all_component$group, levels = c("PD vs HC", "PD vs OND", "PD vs HC+OND"))
+```
+
+**Table 3**: in subjects that completed all assessments in phases I and II, for head-to-head comparison
+
+```{r}
+res_all_component %>% filter(sex == "All") %>% arrange(group) %>% select(tests:auc)
+```
+
+**Supplementary Table 3**: using all available scores
+
+```{r}
+res_PREDIGT1 %>% filter(sex == "All") %>% arrange(group) %>% select(tests:auc)
+```
+
+**Supplementary Table 5**: in subjects that completed all assessments in phases I and II, separated by sex
+
+```{r}
+res_all_component %>% filter(sex == "Female")  %>% arrange(group) %>% select(tests:auc)
+res_all_component %>% filter(sex == "Male") %>% arrange(group) %>% select(tests:auc)
+```
+
+## Thresholds, sensitivity, specificity, LR+, LR-, ppv, npv
+
+**Table 4**: in subjects that completed all assessments in phases I and II, for head-to-head comparison
+
+```{r}
+res_all_component %>% filter(sex == "All", group == "PD vs HC+OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all)
+res_all_component %>% filter(sex == "All", group == "PD vs HC") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all)
+res_all_component %>% filter(sex == "All", group == "PD vs OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all)
+```
+
+**Supplementary Table 6**: in subjects that completed all assessments in phases I and II, **females**
+
+```{r}
+res_all_component %>% filter(sex == "Female", group == "PD vs HC+OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+res_all_component %>% filter(sex == "Female", group == "PD vs HC") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+res_all_component %>% filter(sex == "Female", group == "PD vs OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+```
+
+**Supplementary Table 7**: in subjects that completed all assessments in phases I and II, **males**
+
+```{r}
+res_all_component %>% filter(sex == "Male", group == "PD vs HC+OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+res_all_component %>% filter(sex == "Male", group == "PD vs HC") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+res_all_component %>% filter(sex == "Male", group == "PD vs OND") %>% select(tests, cut_all, sens_all, spec_all, LR_p_all, LR_n_all, ppv_all, npv_all, cut, sens, spec, LR_p, LR_n, ppv, npv)
+```
+
+```{r}
+
+```

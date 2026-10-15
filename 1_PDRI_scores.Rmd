@@ -1,0 +1,138 @@
+---
+title: "Calculate versions of questionniare scores, smell test scores, and PD-RISK Indices (Github ver, open data)"
+author: "Juan Li"
+date: "2026-10-15"
+output:  
+  bookdown::html_document2:
+    toc: true
+    number_sections: true
+    toc_float: true
+    fig_caption: yes
+    global_numbering: true 
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+source("R/PREDIGTScr.R", echo=FALSE)
+```
+
+# Read data
+
+```{r}
+# data file
+data <- read.csv("Data/PDRI_curated_open.csv", header = T, check.names=FALSE, na.strings=c("",".","NA", "N/A"))
+
+# variable sheet for data manipulation and selection
+variables <- read.csv("Worksheets/PDRI_variables.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+```
+
+# The calculated PREDIGT score have been included in "Data/PDRI_curated_open.csv"
+
+# Smell tests
+
+```{r}
+# Answer keys
+smell_key <- read.csv("Worksheets/Olfactory_UPSIT_neuroscent_key.csv", header = T, check.names=FALSE, na.strings=c("","NA","N/A"))
+```
+
+## UPSIT
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+UPSIT <- data %>% select(ID, UPSIT.01.M:UPSIT.40.M)
+
+# Transform multiple choice responses into dichotomous (0 = incorrect; 1 = correct)
+for (i in 1: 40) {
+  UPSIT$new <- ifelse(UPSIT[,i+1] != smell_key$UPSIT[i], 0, 1)
+    
+  if (i < 10) {
+    str <- paste0("UPSIT.0", i, ".B")
+  } else {
+    str <- paste0("UPSIT.", i, ".B")
+  }
+  names(UPSIT)[names(UPSIT) == "new"] <- str
+}
+
+# Calculate UPSIT score
+UPSIT$UPSIT_scr <- rowSums(UPSIT %>% select(UPSIT.01.B:UPSIT.40.B))
+
+# UPSIT percentile
+upsit_norm <- read.csv("Worksheets/UPSIT norm.csv", header = T, na.strings=c("",".","NA", "N/A"))
+upsit_norm[is.na(upsit_norm)] <- 4
+upsit_norm_long <- upsit_norm %>% pivot_longer(-c(UPSIT, sex), names_to = "age_cat", values_to = "UPSIT_percentile")
+upsit_norm_long$age_cat <- factor(upsit_norm_long$age_cat, levels = c("X35.39", "X40.44", "X45.49", "X50.54", "X55.59", "X60.64", "X65.69", "X70.74", "X75.79", "X80.84", "over85"))
+levels(upsit_norm_long$age_cat) <- c("35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "over85")
+upsit_norm_long$ref <- paste(upsit_norm_long$sex, upsit_norm_long$age_cat, upsit_norm_long$UPSIT, sep = "_")
+
+upsit_percentile <- UPSIT %>% select(ID, UPSIT_scr) %>% left_join(data %>% select(ID, sex, age_cat), by = "ID")
+upsit_percentile$ref <- paste(upsit_percentile$sex, upsit_percentile$age_cat, upsit_percentile$UPSIT_scr, sep = "_")
+
+upsit_percentile <- upsit_percentile %>% left_join(upsit_norm_long %>% select(ref, UPSIT_percentile), by = "ref")
+
+UPSIT <- UPSIT %>% left_join(upsit_percentile %>% select(ID, UPSIT_percentile), by = "ID")
+UPSIT <- UPSIT %>% 
+  mutate(olfaction =ifelse(is.na(UPSIT_percentile), NA,
+                           ifelse(UPSIT_percentile <= 15, "Reduced", "Normal"))) # DOI: 10.1002/mds.24892
+
+# Save results
+data <- data %>% left_join(UPSIT %>% select(ID, UPSIT_scr, UPSIT_percentile, olfaction), by = "ID")
+```
+
+# NeuroScent
+
+```{r}
+neuroscent <- data %>% select(ID, neuroscent1.M:neuroscent8.M)
+
+# Transform multiple choice responses into dichotomous (0 = incorrect; 1 = correct)
+for (i in 1: 8) {
+  neuroscent$new <- ifelse(neuroscent[,i+1] != smell_key$NeuroScent[i], 0, 1)
+  names(neuroscent)[names(neuroscent) == "new"] <- paste0("neuroscent.", i, ".B")
+}
+
+# Calculate neuroscent score
+neuroscent$neuroscent_scr <- rowSums(neuroscent %>% select(neuroscent.1.B:neuroscent.8.B))
+
+# Save results
+data <- data %>% left_join(neuroscent %>% select(ID, neuroscent_scr), by = "ID")
+```
+
+# 2-step combined
+
+```{r}
+df_dev <- data %>% filter(group %in% c("HC", "PD")) %>% droplevels() %>% 
+  mutate(group_num = ifelse(group == "HC", 0, 1))
+
+df_res <- data.frame()
+
+# PREDIGT_O + UPSIT_scr
+fit1 <- glm(group_num ~ PREDIGT_O + UPSIT_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_O_UPSIT <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_O + UPSIT_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+# PREDIGT_S_B_motor + neuroscent_scr
+fit1 <- glm(group_num ~ PREDIGT_S_B_motor + neuroscent_scr, data = df_dev, family = binomial())
+summary(fit1)
+data$PREDIGT_S_B_motor_neuroscent <- predict(fit1, newdata = data, type="response") * 100 # using probability
+df_res <- bind_rows(df_res,
+                    data.frame(name = "PREDIGT_S_B_motor + neuroscent_scr",
+                               intercept = coef(fit1)[1],
+                               questionnaire = coef(fit1)[2],
+                               smell_test = coef(fit1)[3]))
+
+```
+
+```{r}
+write.csv(df_res, "Data/Code generated/Two_step_combine_betas.csv", row.names = FALSE)
+write.csv(data, "Data/Code generated/PDRI_curated_scores.csv", row.names = FALSE)
+```
+
+```{r}
+
+```
+

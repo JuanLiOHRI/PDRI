@@ -1,0 +1,217 @@
+﻿Short.name,Long.name,Type,Option,Original,Simple_b,Motor_b,Table1,Cat_summary,OR,OR_sex,Con_summary_table,Con_summary_figure,ROC,Type1,Type2,Open.data,Reason,Results.affected
+EVENT_ID,EVENT_ID,text,BL,,,,,,,,,,,,,0,Not needed for the restricted analysis,
+ID,ID,text,mock IDs,,,,,,,,,,,,,1,,
+sex,Sex,cat,Female / Male / Other,,,,1,,,,,,,,,1,,
+age,Age,num,,,,,1,,,,,1,,,,0,De-identification requirement,Table 1
+age_cat,Age category,string,,,,,,,,,,,,,,1,,
+ethnicity,Ethnicity,cat,No / Yes / N/A,,,,,1,,,,,,,,0,Small cell size,Supplementary Table 2
+race_dir,Race,cat,"Ashkenazi Jewish
+Ashkenazi Jewish, White
+Asian
+Asian, White
+Did not answer
+Indigenous Peoples in Canada (the First Nations, Inuit and Métis), White
+Native Hawaiian or other Pacific Islander, White
+Other, Armenian-Iranian
+Other, Black
+White   ",,,,,1,,,,,,,,0,Small cell size,Supplementary Table 2
+race_dir2,Race2,cat,"Did not answer
+Non-white
+White",,,,,1,,,,,,,,1,,
+group,group,cat,"HC
+PD
+Other",,,,,,,,,,,,,1,,
+group2,group2,cat,"HC
+PD
+MSA/PSP
+AON
+MCI/DEM",,,,,,,,,,,,,1,,
+diagnosis,diagnosis,cat,24 different diagnosis,,,,,,,,,,,,,0,De-identification requirement,
+disease_duration,Disease duration at visit in years,num,,,,,1,,,,,,,,,0,De-identification requirement,Table 1
+metal_dir,"Metal, binary",cat,"0 = No
+1 = Yes",1,0,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+pesticide_dir,"Pesticide, binary",cat,"0 = No
+1 = Yes",1,0,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+farm_dir,"Farm life, binary",cat,"0 = No
+1 = Yes",1,0,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+head_injury,"Head trauma, binary",cat,No / Yes,,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+head_injury_dir,Head trauma,cat,"0 = No head trauma
+1 = Had head trauma, no concussion
+2 = Had head trauma and concussion",1,0,0,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+constipation_dir_b,"Constipation, binary",cat,"0 = Never/Not Applicable
+1 = Sometimes / Regularly / Often",1,1,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+constipation,Constipation (SCOPA-AUT 06),cat,Never/Not Applicable / Sometimes / Regularly / Often,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+olfaction_dir,"Subjective olfaction reduction, binary",cat,"0 = No / Yes, with known cause
+1 = Yes, without known cause",1,1,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+olfaction_self,Subjective olfaction reduction (PD NMS 02),cat,"No / Yes, without known cause / Yes, with known cause",,,,,1,,,,,,,,1,,
+olfaction_other_dir,olfaction_other_dir,cat,"Infection - Covid-19, flu, cold
+Allergy
+Other",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+smoke,"Smoking, binary",cat,No / Yes,,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+smoke_dir,Smoking,cat,"Never smoked
+Past smoking
+Current smoking",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+smoke_dir2,smoke_dir2,cat,"12 = Current smoking >= 20 years
+8 = Current smoking >10 years
+4 = Past smoking >= 20 years
+2 =Past smoking >10 years
+1 = Any other smoking
+0 = Never smoked",1,0,0,,,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+caffeine,"Caffeinated beverage, binary",cat,No / Yes,,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+caffeine_dir,Caffeinated beverage,cat,"0 = No caffeine, or <1 cup/day
+1 = 1-2 cups/day
+2 = >=2 cups/day",1,0,0,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+family_history_dir_b,family_history_dir_b,cat,"0 = No
+1 = Yes",0,1,0,,,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+family_history,"Family history of PD, binary",cat,No / Yes,,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+family_history_dir,Family history of PD,cat,"4 = 1-degree
+2 = 2-degree
+1 = Any family history
+0 = No family history",1,0,0,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+genetic_dir,Genetic,cat,"Not done genetic testing
+Done testing, don't remember results
+Done testing, none identified
+Parkin
+GBA",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression_dir,"Depression, binary",cat,"0 = other
+1 = `depression1_b == 1` and `depression2_b == 1`",1,0,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression1_b,"Depression1, binary",cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",0,1,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression1,Depression1 (MDS UPDRS 1.03),cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression2_b,"Depression2, binary",cat,"0 =Never
+1 = Occasionally / Sometimes / Often / Always",,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression2,Depression2 (PDQ39.17),cat,Never / Occasionally / Sometimes / Often / Always,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression_med,Depression: medication,cat,No / Yes,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+depression_covid,Depression: COVID,cat,No / Yes,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety_dir,"Anxiety,  binary",cat,"0 = other
+1 = `anxiety1_b == 1` and `anxiety2_b == 1`",1,0,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety1_b,"Anxiety1, binary",cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",0,1,0,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety1,Anxiety1 (MDS UPDRS 1.04),cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety2_b,"Anxiety2, binary",cat,"0 =Never
+1 = Occasionally / Sometimes / Often / Always",,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety2,Anxiety2 (PDQ39.21),cat,Never / Occasionally / Sometimes / Often / Always,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety_med,Anxiety: medication,cat,No / Yes,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+anxiety_covid,Anxiety: COVID,cat,No / Yes,,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+rbd,"RBD, binary",cat,No / Yes,,,,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+rbd_dir,rbd_dir,cat,"0 = No
+1 = Yes",1,1,0,,,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+fatigue_dir,"Fatigue, binary",cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",0,0,1,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+fatigue,Fatigue (MDS UPDRS 1.13),cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+handwriting_dir,"Handwriting, binary",cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",0,0,1,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+handwriting,Handwriting (MDS UPDRS 2.07),cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+slowness_dir,"Slowness, binary",cat,"0 = Normal
+1 = Slight / Mild / Moderate / Severe",0,0,1,,1,1,1,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+slowness,Slowness (MDS UPDRS II),cat,"Normal
+Slight
+Mild
+Moderate
+Severe",,,,,1,,,,,,,,0,De-identification requirement (to avoid the derivation of continuous age),"Supplementary Tables 1,2,4"
+weight_dir_kg,Weight (kg),num,,,,,,,,,1,1,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+height_dir_cm,Height (cm),num,,,,,,,,,1,1,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+bmi_dir,Body mass index,num,,,,,,,,,1,1,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+exercise_moderate_year,"Exercise: moderate, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+exercise_HIIT_year,"Exercise: HIIT, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+exercise_muscle_year,"Exercise: muscle, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+med_nsaid,Medication: nsaid,cat,"Ibuprofen-based non-aspirin medications
+Aspirin
+Other anti-inflammatory medications
+No answer",,,,,1,,,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+med_ccb,Medication: ccb,cat,No / Yes / No answer,,,,,1,,,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+med_beta,Medication: beta,cat,"Acebutolol (Sectral)
+Atenolol (Tenormin)
+Bisoprolol (Zebeta)
+Metoprolol (Lopressor, Toprol XL)
+Nadolol (Corgard)
+Nebivolol (Bystolic)
+Propranolol (Inderal, InnoPran XL)
+No answer",,,,,1,,,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+med_prostate,Medication: prostate,cat,"Terazosin (Hytrin)
+Doxazosin (Cardura)
+Alfuzosin (Uroxatral)
+Tamulosin
+No answer",,,,,1,,,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+diabetes,Diabetes,cat,No / Yes,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+med_diabetes,Medication: diabetes,cat,"GLP-1
+DPP-4
+No answer",,,,,1,,,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_ibd,"Disease: ibd, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_crohn,"Disease: crohn, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_rosacea,"Disease: rosacea, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_ulcer,"Disease: ulcer, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_hepatitis,"Disease: hepatitis, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+disease_no,"Disease: none, binary",cat,No / Yes / N/A,,,,,1,1,0,,,,,,0,Not needed for the restricted analysis,Supplementary Table 2
+UPSIT.01.M,UPSIT.01.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.02.M,UPSIT.02.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.03.M,UPSIT.03.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.04.M,UPSIT.04.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.05.M,UPSIT.05.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.06.M,UPSIT.06.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.07.M,UPSIT.07.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.08.M,UPSIT.08.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.09.M,UPSIT.09.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.10.M,UPSIT.10.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.11.M,UPSIT.11.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.12.M,UPSIT.12.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.13.M,UPSIT.13.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.14.M,UPSIT.14.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.15.M,UPSIT.15.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.16.M,UPSIT.16.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.17.M,UPSIT.17.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.18.M,UPSIT.18.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.19.M,UPSIT.19.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.20.M,UPSIT.20.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.21.M,UPSIT.21.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.22.M,UPSIT.22.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.23.M,UPSIT.23.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.24.M,UPSIT.24.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.25.M,UPSIT.25.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.26.M,UPSIT.26.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.27.M,UPSIT.27.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.28.M,UPSIT.28.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.29.M,UPSIT.29.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.30.M,UPSIT.30.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.31.M,UPSIT.31.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.32.M,UPSIT.32.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.33.M,UPSIT.33.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.34.M,UPSIT.34.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.35.M,UPSIT.35.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.36.M,UPSIT.36.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.37.M,UPSIT.37.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.38.M,UPSIT.38.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.39.M,UPSIT.39.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+UPSIT.40.M,UPSIT.40.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent1.M,neuroscent1.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent2.M,neuroscent2.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent3.M,neuroscent3.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent4.M,neuroscent4.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent5.M,neuroscent5.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent6.M,neuroscent6.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent7.M,neuroscent7.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+neuroscent8.M,neuroscent8.M,cat,1 / 2 / 3 / 4/ 5,,,,,,,,,,,,,1,,
+PREDIGT_O,Original PREDIGT,num,,,,,,,,,1,1,1,Original,Questionnaire only,1,,
+PREDIGT_S_B_motor,"Simplified PREDIGT with motor, binary",num,,,,,,,,,1,1,1,Updated,Questionnaire only,1,,
+UPSIT_scr,UPSIT score,num,,,,,,,,,1,1,1,Original,Smell test only,0,Code generated,
+UPSIT_percentile,UPSIT percentile,num,,,,,,,,,,1,,Original,Smell test only,0,Code generated,
+olfaction,Olfaction category,cat,Normal / Reduced,,,,,1,1,1,,,,,,0,Code generated,
+neuroscent_scr,NeuroScent score,num,,,,,,,,,1,1,1,Updated,Smell test only,0,Code generated,
+PREDIGT_O_UPSIT,2-step: PREDIGT_O + UPSIT,num,,,,,,,,,1,1,1,Original,2-step combined,0,Code generated,
+PREDIGT_S_B_motor_neuroscent,2-step: PREDIGT_S_B_motor + NeuroScent,num,,,,,,,,,1,1,1,Updated,2-step combined,0,Code generated,
