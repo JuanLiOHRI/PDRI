@@ -27,7 +27,7 @@ renv::restore()
 
 This repo contains three main files, which need to be run in this specific order:
 
-1.  `1_PDRI_scores.Rmd`: Generating versions of the PD-RISK questionnaire scores, UPSIT scores, simplified smell test (NeuroScent) scores, and the corresponding summary scores ('PD-RISK Indices').
+1.  `1_PDRI_scores.Rmd`: Generating versions of the PD-RISK questionnaire scores (also known as PREDIGT score), UPSIT scores, simplified smell test (NeuroScent) scores, and the corresponding summary scores ('PD-RISK Indices').
 
 - **Requires:**
   - `R/PREDIGTScr.R`;
