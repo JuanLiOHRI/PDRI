@@ -1,6 +1,6 @@
 # PD-RISK Index: Open data
 
-This repo contains code to generate results in the manuscript entitled [*"PD-RISK Index: Piloting an unsupervised toolkit to identify adults with Parkinson disease"*](https://www.medrxiv.org/content/10.64898/2026.04.30.26352172v2)
+This repo contains code to generate results in the manuscript entitled [*"PD-RISK Index: Piloting an unsupervised toolkit to identify adults with Parkinson disease"*](https://www.medrxiv.org/content/10.64898/2026.04.30.26352172v3)
 
 ------------------------------------------------------------------------
 
